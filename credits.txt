@@ -1,0 +1,23 @@
+CoolShell is developped using the following resources:
+
+  * Win32++
+    Website: http://win32-framework.sourceforge.net/
+    MIT License: http://opensource.org/licenses/mit-license.php
+
+  * Boost C++ libraries
+    Website: http://www.boost.org/
+    Boost license: http://www.boost.org/users/license.html
+
+  * Loki  C++ libraries
+    Website: http://loki-lib.sourceforge.net/
+    MIT License: http://opensource.org/licenses/mit-license.php
+
+    * CoolShell icon:
+    UNDERWATER by Yegor Gilyov
+    We hope you will be happy with these icons!
+    "Thanks to my girlfriend Tanya for her patience and user feedback. Thanks to my colleagues Dmitri Joukov and Denis Kortunov for professional advices. Special thanks to Denis for his PowerBook."
+    This Underwater icon pack is free to use for personal non-commercial purposes. 
+    Please give credits to http://www.turbomilk.com in case of public use. We sincerely hope that these icons will make you happy and nobody get hurt.
+    With Love, TurboMilk team.  
+    http://www.turbomilk.com
+    info@turbomilk.com

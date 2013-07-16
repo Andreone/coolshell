@@ -1,0 +1,56 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="VC++ Files">
+      <UniqueIdentifier>{97326184-fd56-4a32-b6a9-00f932cceee9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Logging">
+      <UniqueIdentifier>{c189b355-61e3-40ee-bdca-b85cb7b5ba31}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="targetver.h">
+      <Filter>VC++ Files</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>VC++ Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NotifyIcon.h" />
+    <ClInclude Include="Console.h" />
+    <ClInclude Include="Logging.h">
+      <Filter>Logging</Filter>
+    </ClInclude>
+    <ClInclude Include="Version.h" />
+    <ClInclude Include="ScopeExitFunction.h" />
+    <ClInclude Include="Timers.h" />
+    <ClInclude Include="Handles.h" />
+    <ClInclude Include="Keyboard.h" />
+    <ClInclude Include="Mouse.h" />
+    <ClInclude Include="SystemInfo.h" />
+    <ClInclude Include="WinApi.h" />
+    <ClInclude Include="WinVersionInfo.h" />
+    <ClInclude Include="ClickAlgo.h" />
+    <ClInclude Include="ClickManager.h" />
+    <ClInclude Include="Debug.h" />
+    <ClInclude Include="WinError.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>VC++ Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NotifyIcon.cpp" />
+    <ClCompile Include="Console.cpp" />
+    <ClCompile Include="Logging.cpp">
+      <Filter>Logging</Filter>
+    </ClCompile>
+    <ClCompile Include="Version.cpp" />
+    <ClCompile Include="Keyboard.cpp" />
+    <ClCompile Include="Mouse.cpp" />
+    <ClCompile Include="SystemInfo.cpp" />
+    <ClCompile Include="WinApi.cpp" />
+    <ClCompile Include="WinVersionInfo.cpp" />
+    <ClCompile Include="ClickAlgo.cpp" />
+    <ClCompile Include="ClickManager.cpp" />
+    <ClCompile Include="Debug.cpp" />
+  </ItemGroup>
+</Project>
