@@ -18,17 +18,16 @@
 #include <boost/noncopyable.hpp>
 
 #include "IMouseEventDispatcher.h"
-#include "IMouseHookListener.h"
+#include "CoolShellLib/WindowsHooks/LowLevelMouseEventArgs.h"
 
 class MouseEventDispatcher : public IMouseEventDispatcher,
-                             public IMouseHookListener,
                              private boost::noncopyable
 {
 public:
     typedef IMouseEventDispatcher::LowLevelMouseEvent LowLevelMouseEvent;
 
     MouseEventDispatcher();
-    virtual ~MouseEventDispatcher();
+	virtual ~MouseEventDispatcher(); 
 
     // IMouseHookListener interface
     virtual void OnLowLevelMouseEvent(WindowsHooks::LowLevelMouseEventArgs& args);

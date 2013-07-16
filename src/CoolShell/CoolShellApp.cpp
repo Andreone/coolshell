@@ -18,14 +18,14 @@
 
 #include <boost/bind.hpp>
 
-#include "CoolShellLib\Handles.h"
-#include "CoolShellLib\Logging.h"
-#include "CoolShellLib\WinApi.h"
+#include "CoolShellLib/Handles.h"
+#include "CoolShellLib/Logging.h"
+#include "CoolShellLib/WinApi.h"
 
 #include "AppConstants.h"
 #include "DragWindowModule.h"
-#include "WindowsHooks/LowLevelMouseMonitor.h"
-#include "WindowsHooks/LowLevelKeyboardMonitor.h"
+#include "CoolShellLib/WindowsHooks/LowLevelMouseMonitor.h"
+#include "CoolShellLib/WindowsHooks/LowLevelKeyboardMonitor.h"
 
 using namespace WindowsHooks;
 

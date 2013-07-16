@@ -7,6 +7,9 @@
     <Filter Include="Logging">
       <UniqueIdentifier>{c189b355-61e3-40ee-bdca-b85cb7b5ba31}</UniqueIdentifier>
     </Filter>
+    <Filter Include="WindowsHooks">
+      <UniqueIdentifier>{2ee9fca3-6f59-44c3-8f96-aceb6375fab6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="targetver.h">
@@ -33,6 +36,30 @@
     <ClInclude Include="ClickManager.h" />
     <ClInclude Include="Debug.h" />
     <ClInclude Include="WinError.h" />
+    <ClInclude Include="WindowsHooks\LowLevelMouseMonitor.h">
+      <Filter>WindowsHooks</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowsHooks\MouseEventArgs.h">
+      <Filter>WindowsHooks</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowsHooks\HookBase.h">
+      <Filter>WindowsHooks</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowsHooks\HookEventArgsBase.h">
+      <Filter>WindowsHooks</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowsHooks\InstallationPolicies.h">
+      <Filter>WindowsHooks</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowsHooks\LowLevelKeyboardEventArgs.h">
+      <Filter>WindowsHooks</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowsHooks\LowLevelKeyboardMonitor.h">
+      <Filter>WindowsHooks</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowsHooks\LowLevelMouseEventArgs.h">
+      <Filter>WindowsHooks</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -52,5 +79,14 @@
     <ClCompile Include="ClickAlgo.cpp" />
     <ClCompile Include="ClickManager.cpp" />
     <ClCompile Include="Debug.cpp" />
+    <ClCompile Include="WindowsHooks\LowLevelMouseMonitor.cpp">
+      <Filter>WindowsHooks</Filter>
+    </ClCompile>
+    <ClCompile Include="WindowsHooks\InstallationPolicies.cpp">
+      <Filter>WindowsHooks</Filter>
+    </ClCompile>
+    <ClCompile Include="WindowsHooks\LowLevelKeyboardMonitor.cpp">
+      <Filter>WindowsHooks</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

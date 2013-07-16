@@ -48,9 +48,6 @@
     <ClInclude Include="IMouseEventDispatcher.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="IMouseHookListener.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="IMouseModule.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -73,30 +70,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="CoolShellApp.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="WindowsHooks\HookBase.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="WindowsHooks\HookEventArgsBase.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="WindowsHooks\InstallationPolicies.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="WindowsHooks\LowLevelKeyboardEventArgs.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="WindowsHooks\LowLevelKeyboardMonitor.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="WindowsHooks\LowLevelMouseEventArgs.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="WindowsHooks\LowLevelMouseMonitor.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="WindowsHooks\MouseEventArgs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -138,15 +111,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="CoolShellApp.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="WindowsHooks\InstallationPolicies.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="WindowsHooks\LowLevelKeyboardMonitor.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="WindowsHooks\LowLevelMouseMonitor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

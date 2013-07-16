@@ -16,12 +16,11 @@
 #include "stdafx.h"
 #include "MouseEventDispatcher.h"
 
-#include "CoolShellLib\Logging.h"
-#include "CoolShellLib\WinApi.h"
+#include "CoolShellLib/Logging.h"
+#include "CoolShellLib/WinApi.h"
 
 MouseEventDispatcher::MouseEventDispatcher() :
     IMouseEventDispatcher(),
-    IMouseHookListener(),
     m_LButtonDownEvent(),
     m_LButtonUpEvent(),
     m_RButtonDownEvent(),

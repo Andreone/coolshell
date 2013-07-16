@@ -16,7 +16,7 @@
 #pragma once
 
 #include <boost/signals2.hpp>
-#include "WindowsHooks\LowLevelMouseEventArgs.h"
+#include "CoolShellLib\WindowsHooks\LowLevelMouseEventArgs.h"
 
 struct IMouseEventDispatcher
 {

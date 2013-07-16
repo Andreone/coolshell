@@ -184,7 +184,6 @@
     <ClInclude Include="DragWindowModule.h" />
     <ClInclude Include="IApplication.h" />
     <ClInclude Include="IMouseEventDispatcher.h" />
-    <ClInclude Include="IMouseHookListener.h" />
     <ClInclude Include="IMouseModule.h" />
     <ClInclude Include="MouseEventDispatcher.h" />
     <ClInclude Include="MouseOverTitleBar.h" />
@@ -195,14 +194,6 @@
     <ClInclude Include="WindowClassFilter.h" />
     <ClInclude Include="WindowMinimizer.h" />
     <ClInclude Include="WindowRoller.h" />
-    <ClInclude Include="WindowsHooks\HookBase.h" />
-    <ClInclude Include="WindowsHooks\HookEventArgsBase.h" />
-    <ClInclude Include="WindowsHooks\InstallationPolicies.h" />
-    <ClInclude Include="WindowsHooks\LowLevelKeyboardEventArgs.h" />
-    <ClInclude Include="WindowsHooks\LowLevelKeyboardMonitor.h" />
-    <ClInclude Include="WindowsHooks\LowLevelMouseEventArgs.h" />
-    <ClInclude Include="WindowsHooks\LowLevelMouseMonitor.h" />
-    <ClInclude Include="WindowsHooks\MouseEventArgs.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AlwaysOnTopStateToggler.cpp" />
@@ -223,9 +214,6 @@
     <ClCompile Include="WindowClassFilter.cpp" />
     <ClCompile Include="WindowMinimizer.cpp" />
     <ClCompile Include="WindowRoller.cpp" />
-    <ClCompile Include="WindowsHooks\InstallationPolicies.cpp" />
-    <ClCompile Include="WindowsHooks\LowLevelKeyboardMonitor.cpp" />
-    <ClCompile Include="WindowsHooks\LowLevelMouseMonitor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="CoolShell.rc" />
