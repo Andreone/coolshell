@@ -1,5 +1,4 @@
 require 'albacore'
-require_relative './tools/rake_tools/subversion.rb'
 require_relative './tools/rake_tools/versioning.rb'
 
 $project_name = 'CoolShell'
@@ -16,15 +15,15 @@ def GetBuildOutputDir()
   File.join('bin', $configuration + '_' + $platform)
 end
 
-build_number = ENV['BUILD_NUMBER'] || Subversion.new().get_local_revision()
+build_number = ENV['BUILD_NUMBER'] || '0'
 base_version = Versioning.read_cpp_version($project_resource_file)
 $version = Versioning.set_build_number(base_version, build_number)
   
-puts "Configuration: #{$configuration}"
-puts "Platform: #{$platform}"
-puts "Toolset: #{$toolset}"
-puts "Version: #{$version}"
-puts
+#puts "Configuration: #{$configuration}"
+#puts "Platform: #{$platform}"
+#puts "Toolset: #{$toolset}"
+#puts "Version: #{$version}"
+#puts
 
 ################################################################################
 
