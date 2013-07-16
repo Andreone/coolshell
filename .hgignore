@@ -1,4 +1,5 @@
 syntax: glob
+artifacts/**
 bin/**
 ipch/**
 obj/**

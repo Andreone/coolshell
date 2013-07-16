@@ -15,9 +15,8 @@ def GetBuildOutputDir()
   File.join('bin', $configuration + '_' + $platform)
 end
 
-build_number = ENV['BUILD_NUMBER'] || '0'
-base_version = Versioning.read_cpp_version($project_resource_file)
-$version = Versioning.set_build_number(base_version, build_number)
+build_number = ENV['BUILD_NUMBER'] || '1'
+$version = "1.0.0" + ".#{build_number}"
   
 #puts "Configuration: #{$configuration}"
 #puts "Platform: #{$platform}"
@@ -28,7 +27,7 @@ $version = Versioning.set_build_number(base_version, build_number)
 ################################################################################
 
 task :default do
-  puts 'no default task, type "rake -T" to see available tasks'
+  puts `rake -T`
 end
 
 desc 'Update version, build and create artifacts'
