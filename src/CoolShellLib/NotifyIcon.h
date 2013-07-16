@@ -15,10 +15,11 @@
 
 #pragma once
 
-#include "boost/noncopyable.hpp"
-#include "boost/signal.hpp"
-#include "boost/optional.hpp"
-#include <map>
+#include <unordered_map>
+
+#include <boost/noncopyable.hpp>
+#include <boost/signals2.hpp>
+#include <boost/optional.hpp>
 
 /**
  * \brief Represents an icon into the system notification area
@@ -31,8 +32,8 @@
 class NotifyIcon : private boost::noncopyable
 {
 public:
-    typedef boost::signal<void (NotifyIcon&, UINT, UINT, UINT)> NotifyIconEvent;
-    typedef boost::signal<void (NotifyIcon&, UINT)> MenuItemSelectedEvent;
+    typedef boost::signals2::signal<void (NotifyIcon&, UINT, UINT, UINT)> NotifyIconEvent;
+    typedef boost::signals2::signal<void (NotifyIcon&, UINT)> MenuItemSelectedEvent;
 
 protected:
     static UINT WM_NOTIFYICON_MSG;                           /**< registered window message for notify icon notification */
@@ -40,7 +41,7 @@ protected:
     class NotifyIconWnd;
     static NotifyIconWnd s_internalWnd;                      /**< a window to process Windows messages */
     static UINT s_IDGen;                                     /**< unique identifier generator */
-    static std::map<UINT, NotifyIcon*> s_allIcons;           /**< map of created instance (e.g. installed in the tray) */
+    static std::unordered_map<UINT, NotifyIcon*> s_allIcons;           /**< map of created instance (e.g. installed in the tray) */
     static boost::optional<UINT> s_notifyIconVersion;
 
     static UINT GetNextID();

@@ -1,5 +1,6 @@
 syntax: glob
 bin/**
+ipch/**
 obj/**
 *.opensdf
 *.sdf

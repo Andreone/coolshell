@@ -17,6 +17,7 @@
 #include "WheelUnderCursor.h"
 
 #include <boost/bind.hpp>
+
 #include "CoolShellLib\WinApi.h"
 #include "CoolShellLib\Logging.h"
 #include "CoolShellLib\Mouse.h"

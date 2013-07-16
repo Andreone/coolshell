@@ -15,7 +15,7 @@
 
 #pragma once
 
-#include <boost\signals.hpp>
+#include <boost\signals2.hpp>
 #include "InstallationPolicies.h"
 
 namespace WindowsHooks
@@ -35,7 +35,7 @@ private:
     static TMonitor* m_pInstance;
 
 public:
-	typedef boost::signal<void (TEventArgs&)> HookEvent;
+	typedef boost::signals2::signal<void (TEventArgs&)> HookEvent;
     static TMonitor& Instance()
     {
         if(!m_pInstance)

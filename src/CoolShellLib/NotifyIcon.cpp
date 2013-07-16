@@ -86,7 +86,7 @@ protected:
 UINT NotifyIcon::WM_NOTIFYICON_MSG = ::RegisterWindowMessage(_T("{A4D2B94F-96A4-47a6-BABD-5059D2E3A44F}"));
 UINT NotifyIcon::WM_TASKBAR_CREATED = ::RegisterWindowMessage(_T("TaskbarCreated"));
 UINT NotifyIcon::s_IDGen = 0;
-std::map<UINT, NotifyIcon*> NotifyIcon::s_allIcons;
+std::unordered_map<UINT, NotifyIcon*> NotifyIcon::s_allIcons;
 NotifyIcon::NotifyIconWnd NotifyIcon::s_internalWnd;
 boost::optional<UINT> NotifyIcon::s_notifyIconVersion;
 

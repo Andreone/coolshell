@@ -15,12 +15,12 @@
 
 #pragma once
 
-#include "boost/signals.hpp"
+#include <boost/signals2.hpp>
 #include "WindowsHooks\LowLevelMouseEventArgs.h"
 
 struct IMouseEventDispatcher
 {
-    typedef boost::signal<void (WindowsHooks::LowLevelMouseEventArgs&)> LowLevelMouseEvent;
+    typedef boost::signals2::signal<void (WindowsHooks::LowLevelMouseEventArgs&)> LowLevelMouseEvent;
 
     virtual LowLevelMouseEvent& LButtonDownEvent() = 0;
     virtual LowLevelMouseEvent& LButtonUpEvent() = 0;

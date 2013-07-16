@@ -15,8 +15,9 @@
 
 #pragma once
 
+#include <boost/noncopyable.hpp>
+
 #include "IMouseEventDispatcher.h"
-#include "boost/noncopyable.hpp"
 #include "IMouseHookListener.h"
 
 class MouseEventDispatcher : public IMouseEventDispatcher,

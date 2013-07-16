@@ -15,12 +15,11 @@
 
 #pragma once
 
-#include "MouseEventDispatcher.h"
-#include "WheelUnderCursor.h"
-#include "MouseOverTitleBar.h"
-//#include "HotKeys\HotKeyService.h"
 #include "CoolShellMainWnd.h"
 #include "IApplication.h"
+#include "MouseEventDispatcher.h"
+#include "MouseOverTitleBar.h"
+#include "WheelUnderCursor.h"
 
 class CoolShellApp : public CWinApp,
                      public IApplication
