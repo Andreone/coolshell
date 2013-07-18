@@ -16,27 +16,35 @@
 #include "stdafx.h"
 #include "WheelUnderCursor.h"
 
-#include <boost/bind.hpp>
-
 #include "CoolShellLib\WinApi.h"
 #include "CoolShellLib\Logging.h"
 #include "CoolShellLib\Mouse.h"
 
-WheelUnderCursor::WheelUnderCursor() :
-    WindowClassFilter()
+#include "CoolShellConfiguration.h"
+
+WheelUnderCursor::WheelUnderCursor(std::shared_ptr<IMouseEventDispatcher>& mouseEventDispatcher) :
+	m_mouseEventDispatcher(mouseEventDispatcher),
+	m_excludedWndClasses()
 {
 }
 
-WheelUnderCursor::~WheelUnderCursor()
+void WheelUnderCursor::Initialize(const WheelUnderCursorConfiguration& configuration)
 {
-    LOG_TRACE(_T("Deleted WheelUnderCursor"));
+	if(!configuration.enabled)
+		return;
+
+	m_mouseEventDispatcher->WheelEvent().connect(std::bind(&WheelUnderCursor::OnWheel, this, std::placeholders::_1));
+    m_mouseEventDispatcher->HWheelEvent().connect(std::bind(&WheelUnderCursor::OnWheel, this, std::placeholders::_1));
+
+	m_excludedWndClasses = configuration.windowClassExclusionList;
 }
 
-void WheelUnderCursor::Setup(IMouseEventDispatcher& dispatcher)
+
+bool WheelUnderCursor::IsWindowClassExcluded(const CString& s) const
 {
-    dispatcher.WheelEvent().connect(boost::bind(&WheelUnderCursor::OnWheel, this, _1));
-    dispatcher.HWheelEvent().connect(boost::bind(&WheelUnderCursor::OnWheel, this, _1));
+    return m_excludedWndClasses.end() != std::find(m_excludedWndClasses.begin(), m_excludedWndClasses.end(), s);
 }
+
 
 void WheelUnderCursor::OnWheel(WindowsHooks::LowLevelMouseEventArgs& args)
 {
@@ -44,15 +52,21 @@ void WheelUnderCursor::OnWheel(WindowsHooks::LowLevelMouseEventArgs& args)
     if(!::IsWindow(hWnd))
         return;
 
-    if(IsWindowClassFiltered(WinApi::GetRootWindow(hWnd)))
-        return;
+	CString windowClassName = WinApi::GetWindowClassName(WinApi::GetRootWindow(hWnd));
+	LOG_INFO(_T("Window class under cursor is '%s'"), (LPCTSTR)windowClassName);
+
+	if(m_excludedWndClasses.end() != std::find(m_excludedWndClasses.begin(), m_excludedWndClasses.end(), windowClassName))
+	{
+		LOG_INFO(_T("Ignored event: the window class '%s' is excluded"), (LPCTSTR)windowClassName);
+		return;
+	}
 
     CPoint mousePos = Mouse::GetCursorPos();
 
-    short delta = (short)HIWORD(args.GetMouseData()) > 0 ? 1 : -1;
+    auto delta = ((short)HIWORD(args.GetMouseData())) > 0 ? 1 : -1;
     if(::PostMessage(hWnd, args.GetMessage(), WHEEL_DELTA * delta << 16, MAKELPARAM(mousePos.x, mousePos.y)))
     {
-        LOG_INFO(_T("Posted wheel message at (%d,%d)"), mousePos.x, mousePos.y);
+        LOG_INFO(_T("Posted wheel message at (%d,%d), delta:%d"), mousePos.x, mousePos.y, delta);
         args.SetHandled(true);
     }
     else
@@ -60,4 +74,3 @@ void WheelUnderCursor::OnWheel(WindowsHooks::LowLevelMouseEventArgs& args)
         LOG_ERROR(_T("Failed to post mouse wheel: %s"), (LPCTSTR)WinApi::GetLastErrorMessage());
     }
 }
-

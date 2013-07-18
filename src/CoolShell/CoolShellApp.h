@@ -43,8 +43,8 @@ public:
 private:
 	void ExitInstance();
 
-	MouseEventDispatcher m_mouseEventDispatcher;
-    std::shared_ptr<WheelUnderCursor> m_wheelManager;
+	std::shared_ptr<MouseEventDispatcher> m_mouseEventDispatcher;
+    std::shared_ptr<WheelUnderCursor> m_wheelUnderCursor;
     std::shared_ptr<MouseOverTitleBar> m_mouseOverTitleBarManager;
     std::shared_ptr<IMouseModule> m_dragModule;
     CoolShellMainWnd m_mainWindow;

@@ -179,6 +179,7 @@
     <ClInclude Include="AppConstants.h" />
     <ClInclude Include="CoolShell.h" />
     <ClInclude Include="CoolShellApp.h" />
+    <ClInclude Include="CoolShellConfiguration.h" />
     <ClInclude Include="CoolShellMainWnd.h" />
     <ClInclude Include="DragWindowManager.h" />
     <ClInclude Include="DragWindowModule.h" />
@@ -226,6 +227,14 @@
     <ProjectReference Include="..\CoolShellLib\CoolShellLib.vcxproj">
       <Project>{a6007fcd-1b2e-4034-a01e-24ebc0d2f6fb}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="CoolShell.config">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

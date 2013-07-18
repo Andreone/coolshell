@@ -66,10 +66,13 @@
     <ClInclude Include="WindowMinimizer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="WindowRoller.h">
+    <ClInclude Include="CoolShellApp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="CoolShellApp.h">
+    <ClInclude Include="CoolShellConfiguration.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowRoller.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -107,10 +110,10 @@
     <ClCompile Include="WindowMinimizer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="WindowRoller.cpp">
+    <ClCompile Include="CoolShellApp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="CoolShellApp.cpp">
+    <ClCompile Include="WindowRoller.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -126,5 +129,8 @@
     <Image Include="CoolShell.ico">
       <Filter>Resource Files</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="CoolShell.config" />
   </ItemGroup>
 </Project>

@@ -15,19 +15,24 @@
 
 #pragma once
 
-#include "IMouseModule.h"
-#include "WindowClassFilter.h"
+#include <boost/noncopyable.hpp>
 
-class WheelUnderCursor : public IMouseModule,
-                         public WindowClassFilter
+#include "IMouseEventDispatcher.h"
+
+struct WheelUnderCursorConfiguration;
+
+class WheelUnderCursor : protected boost::noncopyable
 {
 public:
-    WheelUnderCursor();
-    virtual ~WheelUnderCursor();
+	WheelUnderCursor(std::shared_ptr<IMouseEventDispatcher>& mouseEventDispatcher);
+	virtual ~WheelUnderCursor() { }
 
-    // IMouseModule interface
-    virtual void Setup(IMouseEventDispatcher& eventDispatcher);
+    void Initialize(const WheelUnderCursorConfiguration& configuration);
 
-protected:
+private:
     void OnWheel(WindowsHooks::LowLevelMouseEventArgs& args);
+	bool IsWindowClassExcluded(const CString& s) const;
+		
+	std::shared_ptr<IMouseEventDispatcher> m_mouseEventDispatcher;
+	std::list<CString> m_excludedWndClasses;
 };

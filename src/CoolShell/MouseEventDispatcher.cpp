@@ -41,7 +41,7 @@ void MouseEventDispatcher::OnLowLevelMouseEvent(WindowsHooks::LowLevelMouseEvent
 {
     try
     {
-        if(args.GetMessage() != WM_MOUSEMOVE)
+        if (args.GetMessage() != WM_MOUSEMOVE)
         {
             LOG_TRACE(_T("Received %s at (%d,%d) - Injected=%s"), 
                 WinApi::GetWindowsMessageString(args.GetMessage()), 
@@ -50,7 +50,13 @@ void MouseEventDispatcher::OnLowLevelMouseEvent(WindowsHooks::LowLevelMouseEvent
                 args.IsInjected() ? _T("yes") : _T("no"));
         }
 
-        switch(args.GetMessage())
+		if (args.IsInjected())
+		{
+			LOG_WARN("Ignored injected event");
+			return;
+		}
+
+		switch (args.GetMessage())
         {
         case WM_LBUTTONDOWN:
             m_LButtonDownEvent(args);
@@ -85,7 +91,7 @@ void MouseEventDispatcher::OnLowLevelMouseEvent(WindowsHooks::LowLevelMouseEvent
             break;
         }
     }
-    catch(std::exception& e)
+    catch (std::exception& e)
     {
         LOG_ERROR(_T("Exception caught during event dispatching: %s"), e.what());
     }

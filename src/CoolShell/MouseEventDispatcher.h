@@ -29,19 +29,18 @@ public:
     MouseEventDispatcher();
 	virtual ~MouseEventDispatcher(); 
 
-    // IMouseHookListener interface
-    virtual void OnLowLevelMouseEvent(WindowsHooks::LowLevelMouseEventArgs& args);
+    void OnLowLevelMouseEvent(WindowsHooks::LowLevelMouseEventArgs& args);
 
     // IMouseEventDispatcher interface
-    virtual LowLevelMouseEvent& LButtonDownEvent()        { return m_LButtonDownEvent; }
-    virtual LowLevelMouseEvent& LButtonUpEvent()          { return m_LButtonUpEvent; }
-    virtual LowLevelMouseEvent& RButtonDownEvent()        { return m_RButtonDownEvent; }
-    virtual LowLevelMouseEvent& RButtonUpEvent()          { return m_RButtonUpEvent; }
-    virtual LowLevelMouseEvent& MButtonDownEvent()        { return m_MButtonDownEvent; }
-    virtual LowLevelMouseEvent& MButtonUpEvent()          { return m_MButtonUpEvent; }
-    virtual LowLevelMouseEvent& WheelEvent()              { return m_WheelEvent; }
-    virtual LowLevelMouseEvent& HWheelEvent()             { return m_HWheelEvent; }
-    virtual LowLevelMouseEvent& MouseMoveEvent()          { return m_MouseMoveEvent; }
+    LowLevelMouseEvent& LButtonDownEvent() override       { return m_LButtonDownEvent; }
+    LowLevelMouseEvent& LButtonUpEvent() override         { return m_LButtonUpEvent; }
+    LowLevelMouseEvent& RButtonDownEvent() override       { return m_RButtonDownEvent; }
+    LowLevelMouseEvent& RButtonUpEvent() override         { return m_RButtonUpEvent; }
+    LowLevelMouseEvent& MButtonDownEvent() override       { return m_MButtonDownEvent; }
+    LowLevelMouseEvent& MButtonUpEvent() override         { return m_MButtonUpEvent; }
+    LowLevelMouseEvent& WheelEvent() override             { return m_WheelEvent; }
+    LowLevelMouseEvent& HWheelEvent() override            { return m_HWheelEvent; }
+    LowLevelMouseEvent& MouseMoveEvent() override         { return m_MouseMoveEvent; }
 
 private:
     LowLevelMouseEvent m_LButtonDownEvent;

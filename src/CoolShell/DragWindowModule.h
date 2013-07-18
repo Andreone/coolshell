@@ -25,7 +25,7 @@ public:
     DragWindowModule();
     virtual ~DragWindowModule();
 
-    virtual void Setup(IMouseEventDispatcher& dispatcher);
+    void Setup(IMouseEventDispatcher& dispatcher) override;
 
 private:
     std::vector<std::shared_ptr<DragWindowManager>> m_managers;
