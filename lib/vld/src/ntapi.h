@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  Visual Leak Detector - NT API Definitions
-//  Copyright (c) 2005-2011 VLD Team
+//  Copyright (c) 2005-2013 VLD Team
 //
 //  This library is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU Lesser General Public
@@ -45,6 +45,7 @@ struct unicodestring_t {
 // Function pointer types for explicit dynamic linking with functions that can't
 // be load-time linked (no import library is available for these).
 typedef NTSTATUS (__stdcall *LdrLoadDll_t) (LPWSTR, ULONG, unicodestring_t *, PHANDLE);
+typedef NTSTATUS (__stdcall *LdrLoadDllWin8_t) (DWORD_PTR, PULONG, unicodestring_t *, PHANDLE);
 typedef LPVOID (__stdcall *RtlAllocateHeap_t) (HANDLE, DWORD, SIZE_T);
 typedef BYTE (__stdcall *RtlFreeHeap_t) (HANDLE, DWORD, LPVOID);
 typedef LPVOID (__stdcall *RtlReAllocateHeap_t) (HANDLE, DWORD, LPVOID, SIZE_T);
@@ -52,6 +53,7 @@ typedef LPVOID (__stdcall *RtlReAllocateHeap_t) (HANDLE, DWORD, LPVOID, SIZE_T);
 // Provide forward declarations for the NT APIs for any source files that
 // include this header.
 extern LdrLoadDll_t        LdrLoadDll;
+extern LdrLoadDllWin8_t    LdrLoadDllWin8;
 extern RtlAllocateHeap_t   RtlAllocateHeap;
 extern RtlFreeHeap_t       RtlFreeHeap;
 extern RtlReAllocateHeap_t RtlReAllocateHeap;

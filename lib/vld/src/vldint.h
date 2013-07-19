@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  Visual Leak Detector - VisualLeakDetector Class Definition
-//  Copyright (c) 2005-2011 VLD Team
+//  Copyright (c) 2005-2013 VLD Team
 //
 //  This library is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU Lesser General Public
@@ -271,6 +271,8 @@ public:
     VOID ResolveCallstacks();
 
     static NTSTATUS __stdcall _LdrLoadDll (LPWSTR searchpath, ULONG flags, unicodestring_t *modulename,
+        PHANDLE modulehandle);
+    static NTSTATUS __stdcall _LdrLoadDllWin8 (DWORD_PTR reserved, PULONG flags, unicodestring_t *modulename,
         PHANDLE modulehandle);
     static FARPROC __stdcall _RGetProcAddress (HMODULE module, LPCSTR procname);
 private:

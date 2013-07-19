@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  Visual Leak Detector - VisualLeakDetector Class Implementation
-//  Copyright (c) 2005-2011 VLD Team
+//  Copyright (c) 2005-2013 VLD Team
 //
 //  This library is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU Lesser General Public
@@ -81,6 +81,19 @@ BOOL IsWin7OrBetter()
     return FALSE;
 }
 
+BOOL IsWin8OrBetter()
+{
+    OSVERSIONINFOEX info = { sizeof(OSVERSIONINFOEX) };
+    GetVersionEx((LPOSVERSIONINFO)&info);
+    if (info.dwMajorVersion > 6)
+        return TRUE;
+
+    if (info.dwMajorVersion == 6 && info.dwMinorVersion >= 2)
+        return TRUE;
+
+    return FALSE;
+}
+
 // Constructor - Initializes private data, loads configuration options, and
 //   attaches Visual Leak Detector to all other modules loaded into the current
 //   process.
@@ -129,7 +142,15 @@ VisualLeakDetector::VisualLeakDetector ()
     HMODULE ntdll = GetModuleHandleW(L"ntdll.dll");
     if (ntdll)
     {
-        LdrLoadDll        = (LdrLoadDll_t)GetProcAddress(ntdll, "LdrLoadDll");
+        if (!IsWin8OrBetter())
+        {
+            LdrLoadDll = (LdrLoadDll_t)GetProcAddress(ntdll, "LdrLoadDll");
+        }
+        else
+        {
+            LdrLoadDllWin8 = (LdrLoadDllWin8_t)GetProcAddress(ntdll, "LdrLoadDll");
+            ldrLoadDllPatch[0].replacement = VisualLeakDetector::_LdrLoadDllWin8;
+        }
         RtlAllocateHeap   = (RtlAllocateHeap_t)GetProcAddress(ntdll, "RtlAllocateHeap");
         RtlFreeHeap       = (RtlFreeHeap_t)GetProcAddress(ntdll, "RtlFreeHeap");
         RtlReAllocateHeap = (RtlReAllocateHeap_t)GetProcAddress(ntdll, "RtlReAllocateHeap");
@@ -954,18 +975,31 @@ tls_t* VisualLeakDetector::getTls ()
     assert(GetLastError() == ERROR_SUCCESS);
 
     if (tls == NULL) {
-        // This thread's thread local storage structure has not been allocated.
-        tls = new tls_t;
+        DWORD threadId = GetCurrentThreadId();
+
+        {
+            CriticalSectionLocker cs(m_tlsLock);
+            TlsMap::Iterator it = m_tlsMap->find(threadId);
+            if(it == m_tlsMap->end()) {
+                // This thread's thread local storage structure has not been allocated.
+                tls = new tls_t;
+
+                // Add this thread's TLS to the TlsSet.
+                m_tlsMap->insert(threadId,tls);
+            }
+            else {
+                // Already had a thread with this ID
+                tls = (*it).second;
+            }
+        }
+
         TlsSetValue(m_tlsIndex, tls);
         ZeroMemory(&tls->context, sizeof(tls->context));
         tls->flags = 0x0;
         tls->oldFlags = 0x0;
-        tls->threadId = GetCurrentThreadId();
+        tls->threadId = threadId;
         tls->ppCallStack = NULL;
-
-        // Add this thread's TLS to the TlsSet.
-        CriticalSectionLocker cs(m_tlsLock);
-        m_tlsMap->insert(tls->threadId,tls);
+        tls->blockProcessed = FALSE;
     }
 
     return tls;
@@ -1791,6 +1825,18 @@ NTSTATUS VisualLeakDetector::_LdrLoadDll (LPWSTR searchpath, ULONG flags, unicod
     return status;
 }
 
+NTSTATUS VisualLeakDetector::_LdrLoadDllWin8 (DWORD_PTR reserved, PULONG flags, unicodestring_t *modulename,
+                                          PHANDLE modulehandle)
+{
+    // Load the DLL.
+    NTSTATUS status = LdrLoadDllWin8(reserved, flags, modulename, modulehandle);
+
+    if (STATUS_SUCCESS == status)
+        g_vld.RefreshModules();
+
+    return status;
+}
+
 VOID VisualLeakDetector::RefreshModules()
 {
     if (m_options & VLD_OPT_VLDOFF)
@@ -2048,7 +2094,8 @@ void VisualLeakDetector::GlobalEnableLeakDetection ()
 
 CONST UINT32 OptionsMask = VLD_OPT_AGGREGATE_DUPLICATES | VLD_OPT_MODULE_LIST_INCLUDE | 
     VLD_OPT_SAFE_STACK_WALK | VLD_OPT_SLOW_DEBUGGER_DUMP | VLD_OPT_START_DISABLED | 
-    VLD_OPT_TRACE_INTERNAL_FRAMES | VLD_OPT_SKIP_HEAPFREE_LEAKS | VLD_OPT_VALIDATE_HEAPFREE;
+    VLD_OPT_TRACE_INTERNAL_FRAMES | VLD_OPT_SKIP_HEAPFREE_LEAKS | VLD_OPT_VALIDATE_HEAPFREE | 
+    VLD_OPT_RELEASE_CRT_RUNTIME;
 
 UINT32 VisualLeakDetector::GetOptions()
 {

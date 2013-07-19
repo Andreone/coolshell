@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  Visual Leak Detector - VisualLeakDetector Class Implementation
-//  Copyright (c) 2005-2011 VLD Team
+//  Copyright (c) 2005-2013 VLD Team
 //
 //  This library is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU Lesser General Public
@@ -1431,9 +1431,11 @@ HANDLE VisualLeakDetector::_HeapCreate (DWORD options, SIZE_T initsize, SIZE_T m
                 if (hCallingModule == hCurrentModule)
                 {
                     // CRT static linking
-#ifdef _DEBUG		// debug runtime
-                    (*heapit).second->flags |= VLD_HEAP_CRT_DBG;
-#endif
+                    if (!(g_vld.m_options & VLD_OPT_RELEASE_CRT_RUNTIME))
+                    {
+                        // debug runtime
+                        (*heapit).second->flags |= VLD_HEAP_CRT_DBG;
+                    }
                 }
                 else
                 {
