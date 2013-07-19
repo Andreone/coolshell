@@ -175,7 +175,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="AlwaysOnTopStateToggler.h" />
+    <ClInclude Include="WindowAction.h" />
     <ClInclude Include="AppConstants.h" />
     <ClInclude Include="CoolShell.h" />
     <ClInclude Include="CoolShellApp.h" />
@@ -197,7 +197,7 @@
     <ClInclude Include="WindowRoller.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AlwaysOnTopStateToggler.cpp" />
+    <ClCompile Include="WindowAction.cpp" />
     <ClCompile Include="CoolShell.cpp" />
     <ClCompile Include="CoolShellApp.cpp" />
     <ClCompile Include="CoolShellMainWnd.cpp" />

@@ -15,24 +15,8 @@
 
 #pragma once
 
-#include "WindowClassFilter.h"
-#include "boost/noncopyable.hpp"
-#include "loki/Singleton.h"
-
-class AlwaysOnTopStateToggler : public WindowClassFilter,
-                                private boost::noncopyable
+class WindowAction
 {
 public:
-    void ToggleWindowState(HWND hWnd);
-
-protected:
-    AlwaysOnTopStateToggler();
-    virtual ~AlwaysOnTopStateToggler();
-    friend struct Loki::CreateUsingNew<AlwaysOnTopStateToggler>;
-
-private:
-    std::map<HWND, bool> m_modifiedWindows;
-
+    static void ToggleWindowState(HWND hWnd);
 };
-
-typedef Loki::SingletonHolder<AlwaysOnTopStateToggler> TheAlwaysOnTopStateToggler;

@@ -21,7 +21,7 @@
 #include "CoolShellLib\WinApi.h"
 #include "CoolShellLib\Logging.h"
 
-#include "AlwaysOnTopStateToggler.h"
+#include "WindowAction.h"
 #include "WindowMinimizer.h"
 #include "WindowRoller.h"
 
@@ -33,7 +33,6 @@ MouseOverTitleBar::MouseOverTitleBar() :
 
 MouseOverTitleBar::~MouseOverTitleBar()
 {
-    LOG_TRACE(_T("Deleted MouseOverTitleBar"));
 }
 
 void MouseOverTitleBar::RegisterAction( UINT area, UINT mouseEvent, MouseAction action )
@@ -62,7 +61,7 @@ void MouseOverTitleBar::Setup(IMouseEventDispatcher& dispatcher)
         } );
 
     RegisterAction(HTCLOSE, WM_RBUTTONUP, [] (HWND hWnd, WindowsHooks::LowLevelMouseEventArgs& args) {
-        TheAlwaysOnTopStateToggler::Instance().ToggleWindowState(hWnd);
+        WindowAction::ToggleWindowState(hWnd);
     } );
 
     RegisterAction(HTMINBUTTON, WM_MBUTTONUP, [] (HWND hWnd, WindowsHooks::LowLevelMouseEventArgs& args) {
