@@ -9,7 +9,7 @@
 #include "CoolShellLib/Console.h"
 
 #if _DEBUG && !_WIN64
-#define __VLD_LIBSEL_ROOT "..\\..\\lib\\vld"
+#define VLD_LIBSEL_ROOT "..\\..\\lib\\vld"
 #include "VldLibSel.h"
 #include "vld.h"
 #pragma message( "VisualLeakDetector Library enabled" )
