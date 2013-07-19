@@ -78,6 +78,17 @@ BOOL SetWindowTransparency(HWND hWnd, COLORREF color, BYTE alphaLevel)
     return ::SetLayeredWindowAttributes(hWnd, color, alphaLevel, LWA_COLORKEY|LWA_ALPHA);
 }
 
+bool IsWindowAlwaysOnTop(HWND hWnd)
+{
+    auto dwExStyle = ::GetWindowLong(hWnd, GWL_EXSTYLE);
+    return (dwExStyle & WS_EX_TOPMOST) != 0;
+}
+
+bool SetWindowAlwaysOnTop(HWND hWnd, bool alwaysOnTop)
+{
+    return ::SetWindowPos(hWnd, (alwaysOnTop ? HWND_TOPMOST : HWND_NOTOPMOST), 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE);
+}
+
 HICON GetWindowIcon(HWND hWnd)
 {
     HICON icon = NULL;

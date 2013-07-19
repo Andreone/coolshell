@@ -23,7 +23,7 @@ class AlwaysOnTopStateToggler : public WindowClassFilter,
                                 private boost::noncopyable
 {
 public:
-    virtual void ToggleWindowState(HWND hWnd);
+    void ToggleWindowState(HWND hWnd);
 
 protected:
     AlwaysOnTopStateToggler();
@@ -31,9 +31,6 @@ protected:
     friend struct Loki::CreateUsingNew<AlwaysOnTopStateToggler>;
 
 private:
-    bool IsAlwaysOnTop(HWND hWnd);
-    void SetState(HWND hWnd, bool alwaysOnTop);
-
     std::map<HWND, bool> m_modifiedWindows;
 
 };

@@ -29,6 +29,9 @@ namespace WinApi
     BOOL SetWindowTransparencyLevel(HWND hWnd, BYTE alphaLevel);
     BOOL SetWindowTransparencyColor(HWND hWnd, COLORREF color);
 
+	bool IsWindowAlwaysOnTop(HWND hWnd);
+	bool SetWindowAlwaysOnTop(HWND hWnd, bool alwaysOnTop);
+
     CString GetCurrentProcessFileName();
     CString GetCurrentProcessExecutableName();
 
