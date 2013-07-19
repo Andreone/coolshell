@@ -18,10 +18,10 @@ USE_VLD must be defined to include VLD
 	#error "You forgot to define VLD_LIBSEL_ROOT before including " __FILE__
 #endif
 
-#if _WIN32
-	#define VLD_PLATFORM_STR "Win32"
-#else
+#if _WIN64
 	#define VLD_PLATFORM_STR "Win64"
+#else
+	#define VLD_PLATFORM_STR "Win32"
 #endif
 
 #define VLD_LIB_PATH	VLD_LIBSEL_ROOT "\\lib\\" VLD_PLATFORM_STR "\\"
