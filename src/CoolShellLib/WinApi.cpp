@@ -84,7 +84,7 @@ bool IsWindowAlwaysOnTop(HWND hWnd)
     return (dwExStyle & WS_EX_TOPMOST) != 0;
 }
 
-bool SetWindowAlwaysOnTop(HWND hWnd, bool alwaysOnTop)
+BOOL SetWindowAlwaysOnTop(HWND hWnd, bool alwaysOnTop)
 {
     return ::SetWindowPos(hWnd, (alwaysOnTop ? HWND_TOPMOST : HWND_NOTOPMOST), 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE);
 }
