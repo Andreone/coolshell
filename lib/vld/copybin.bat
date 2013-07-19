@@ -1,8 +1,8 @@
 set OutDir=%1
-set Configuration=%2
-set Platform=%3
+set BuildConfig=%2
+set BuildPlatform=%3
 
-if "%Platform%" == "Win32" (
+if "%BuildPlatform%" == "Win32" (
     set BinDir=%~dp0bin\Win32
 ) else (
     set BinDir=%~dp0bin\Win64
