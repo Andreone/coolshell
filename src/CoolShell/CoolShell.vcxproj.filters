@@ -60,9 +60,6 @@
     <ClInclude Include="CoolShellApp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="CoolShellConfiguration.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="WindowRoller.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -73,6 +70,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="WheelUnderCursorService.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CoolShellConfiguration.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

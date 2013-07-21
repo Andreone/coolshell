@@ -8,8 +8,6 @@ struct WheelUnderCursorServiceConfiguration
 	std::list<CString> windowClassExclusionList;
 };
 
-//UINT area, UINT mouseEvent, MouseAction action
-
 enum class CursorLocation
 {
 	None,
@@ -21,15 +19,39 @@ enum class CursorLocation
 	Taskbar,
 };
 
-CursorLocation fromString(const std::string& value);
-std::string toString(CursorLocation value);
+CursorLocation CursorLocationFromString(const std::string& value);
+std::string CursorLocationToString(CursorLocation value);
+
+enum class ActionType
+{
+	None,
+	ToggleAlwaysOnTop,
+	SetAlwaysOnTop,
+	UnsetAlwaysOnTop,
+	MinimizeToTray,
+	DecreaseTransparency,
+	IncreaseTransparency,
+	SetTransparency,
+	VolumeUp,
+	VolumeDown,
+	MediaNext,
+	MediaPrevious,
+	MediaPlay,
+	MediaPause,
+	MediaStop,
+	MediaTogglePlayPause,
+};
+
+ActionType ActionTypeFromString(const std::string& value);
+std::string ActionTypeToString(ActionType value);
 
 struct MouseActionConfiguration
 {
 	CursorLocation cursorLocation;
 	UINT mouseEvent;						/** Mouse button Windows message code (WM_RBUTTONUP, ...) */
-	std::string actionName;
+	ActionType actionType;
 	std::vector<std::string> actionArgs;
+	std::vector<int> modifierKeys;
 };
 
 struct HotMouseButtonServiceConfiguration

@@ -16,8 +16,6 @@
 #include "stdafx.h"
 #include "CoolShellApp.h"
 
-//#include <boost/bind.hpp>
-
 #include "CoolShellLib/Handles.h"
 #include "CoolShellLib/Logging.h"
 #include "CoolShellLib/WinApi.h"
@@ -62,16 +60,54 @@ CoolShellConfiguration GetCoolShellConfiguration()
 	mainConfig.wheelUnderCursorServiceConfiguration.enabled = true;
 	//mainConfig.WheelUnderCursorServiceConfiguration.windowClassExclusionList.push_back("MozillaWindowClass");
 
-	MouseActionConfiguration mouseActionConfiguration;
-
 	mainConfig.hotMouseButtonServiceConfiguration.enabled = true;
 
-	mouseActionConfiguration.mouseEvent = Mouse::EventType::RightButtonUp;
-	mouseActionConfiguration.cursorLocation = CursorLocation::MinimizeButton;
-	mouseActionConfiguration.actionName = "MinimizeToTray";
-	mouseActionConfiguration.actionArgs.clear();
-	mainConfig.hotMouseButtonServiceConfiguration.mouseActions.push_back(mouseActionConfiguration);
-
+	{
+		MouseActionConfiguration mouseActionConfiguration;
+		mouseActionConfiguration.mouseEvent = Mouse::EventType::RightButtonUp;
+		mouseActionConfiguration.cursorLocation = CursorLocation::MinimizeButton;
+		mouseActionConfiguration.actionType = ActionType::MinimizeToTray;
+		mainConfig.hotMouseButtonServiceConfiguration.mouseActions.push_back(mouseActionConfiguration);
+	}
+	{
+		MouseActionConfiguration mouseActionConfiguration;
+		mouseActionConfiguration.mouseEvent = Mouse::EventType::RightButtonUp;
+		mouseActionConfiguration.cursorLocation = CursorLocation::CloseButton;
+		mouseActionConfiguration.actionType = ActionType::ToggleAlwaysOnTop;
+		mainConfig.hotMouseButtonServiceConfiguration.mouseActions.push_back(mouseActionConfiguration);
+	}
+	{
+		MouseActionConfiguration mouseActionConfiguration;
+		mouseActionConfiguration.mouseEvent = Mouse::EventType::WheelUp;
+		mouseActionConfiguration.cursorLocation = CursorLocation::TitleBar;
+		mouseActionConfiguration.actionType = ActionType::SetAlwaysOnTop;
+		mainConfig.hotMouseButtonServiceConfiguration.mouseActions.push_back(mouseActionConfiguration);
+	}
+	{
+		MouseActionConfiguration mouseActionConfiguration;
+		mouseActionConfiguration.mouseEvent = Mouse::EventType::WheelDown;
+		mouseActionConfiguration.cursorLocation = CursorLocation::TitleBar;
+		mouseActionConfiguration.actionType = ActionType::UnsetAlwaysOnTop;
+		mainConfig.hotMouseButtonServiceConfiguration.mouseActions.push_back(mouseActionConfiguration);
+	}
+	{
+		MouseActionConfiguration mouseActionConfiguration;
+		mouseActionConfiguration.mouseEvent = Mouse::EventType::WheelUp;
+		mouseActionConfiguration.cursorLocation = CursorLocation::TitleBar;
+		mouseActionConfiguration.actionType = ActionType::DecreaseTransparency;
+		mouseActionConfiguration.actionArgs.push_back("10");
+		mouseActionConfiguration.modifierKeys.push_back(VK_LMENU);
+		mainConfig.hotMouseButtonServiceConfiguration.mouseActions.push_back(mouseActionConfiguration);
+	}
+	{
+		MouseActionConfiguration mouseActionConfiguration;
+		mouseActionConfiguration.mouseEvent = Mouse::EventType::WheelDown;
+		mouseActionConfiguration.cursorLocation = CursorLocation::TitleBar;
+		mouseActionConfiguration.actionType = ActionType::IncreaseTransparency;
+		mouseActionConfiguration.actionArgs.push_back("10");
+		mouseActionConfiguration.modifierKeys.push_back(VK_LMENU);
+		mainConfig.hotMouseButtonServiceConfiguration.mouseActions.push_back(mouseActionConfiguration);
+	}
 	return mainConfig;
 }
 

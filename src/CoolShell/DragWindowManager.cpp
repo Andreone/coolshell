@@ -50,9 +50,9 @@ bool DragWindowManager::IsWindowToProcess(HWND hWnd) const
     if(::GetWindowPlacement(hWnd, &wndPlacement) && wndPlacement.showCmd == SW_SHOWMAXIMIZED)
         return false;
 
-    CPoint mousePos = Mouse::GetCursorPos();
+    auto cursorPosition = Mouse::GetCursorPos();
     // do not allow when over a title bar
-    LRESULT area = ::SendMessage(hWnd, WM_NCHITTEST, NULL, MAKELPARAM(mousePos.x, mousePos.y));
+    auto area = ::SendMessage(hWnd, WM_NCHITTEST, NULL, MAKELPARAM(cursorPosition.x, cursorPosition.y));
     if(area != HTCLIENT)
         return false;
 

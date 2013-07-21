@@ -28,7 +28,7 @@ const char* cursorLocationNames [] =
 	nullptr
 };
 
-CursorLocation fromString(const std::string& value)
+CursorLocation CursorLocationFromString(const std::string& value)
 {
 	for(int i=0; cursorLocationNames[i] != nullptr; ++i)
 	{
@@ -38,7 +38,7 @@ CursorLocation fromString(const std::string& value)
 	throw std::runtime_error("Invalid cursor location string value");
 }
 
-std::string toString(CursorLocation value)
+std::string CursorLocationToString(CursorLocation value)
 {
 	return cursorLocationNames[(int)value];
 }

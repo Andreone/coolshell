@@ -175,11 +175,11 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="CoolShellConfiguration.h" />
     <ClInclude Include="WindowAction.h" />
     <ClInclude Include="AppConstants.h" />
     <ClInclude Include="CoolShell.h" />
     <ClInclude Include="CoolShellApp.h" />
-    <ClInclude Include="CoolShellConfiguration.h" />
     <ClInclude Include="CoolShellMainWnd.h" />
     <ClInclude Include="DragWindowManager.h" />
     <ClInclude Include="DragWindowModule.h" />
