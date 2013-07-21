@@ -36,12 +36,12 @@ public:
     typedef boost::signals2::signal<void (NotifyIcon&, UINT)> MenuItemSelectedEvent;
 
 protected:
-    static UINT WM_NOTIFYICON_MSG;                           /**< registered window message for notify icon notification */
-    static UINT WM_TASKBAR_CREATED;                          /**< registered window message for system wide task bar creation notification */
+    static UINT WM_NOTIFYICON_MSG;							/**< registered window message for notify icon notification */
+    static UINT WM_TASKBAR_CREATED;                         /**< registered window message for system wide task bar creation notification */
     class NotifyIconWnd;
-    static NotifyIconWnd s_internalWnd;                      /**< a window to process Windows messages */
-    static UINT s_IDGen;                                     /**< unique identifier generator */
-    static std::unordered_map<UINT, NotifyIcon*> s_allIcons;           /**< map of created instance (e.g. installed in the tray) */
+    static NotifyIconWnd s_internalWnd;                     /**< a window to process Windows messages */
+    static UINT s_IDGen;									/**< unique identifier generator */
+    static std::unordered_map<UINT, NotifyIcon*> s_allIcons;/**< map of created instance (e.g. installed in the tray) */
     static boost::optional<UINT> s_notifyIconVersion;
 
     static UINT GetNextID();
