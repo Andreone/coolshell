@@ -15,28 +15,24 @@
 
 #pragma once
 
-#include <functional>
-#include <tuple>
+#include <boost/noncopyable.hpp>
 
-#include "IMouseModule.h"
+#include "IMouseEventDispatcher.h"
 
-class MouseOverTitleBar : public IMouseModule
+struct WheelUnderCursorServiceConfiguration;
+
+class WheelUnderCursorService : public boost::noncopyable
 {
 public:
-    typedef std::function<void (HWND, WindowsHooks::LowLevelMouseEventArgs&)> MouseAction;
+	WheelUnderCursorService(std::shared_ptr<IMouseEventDispatcher>& mouseEventDispatcher);
+	virtual ~WheelUnderCursorService() { }
 
-    MouseOverTitleBar();
-    virtual ~MouseOverTitleBar();
-
-    // IMouseModule interface
-	void Setup(IMouseEventDispatcher& eventDispatcher) override;
-
-protected:
-    void RegisterAction(UINT area, UINT mouseEvent, MouseAction action);
-    void OnMouseEvent(WindowsHooks::LowLevelMouseEventArgs& args);
+    void Initialize(const WheelUnderCursorServiceConfiguration& configuration);
 
 private:
-    typedef std::map<std::tuple<UINT,UINT>, MouseAction> MouseActionMap;
-    typedef std::pair<std::tuple<UINT,UINT>, MouseAction> MouseActionMapPair;
-    MouseActionMap m_actions;
+    void OnWheel(WindowsHooks::LowLevelMouseEventArgs& args);
+	bool IsWindowClassExcluded(const CString& s) const;
+		
+	std::shared_ptr<IMouseEventDispatcher> m_mouseEventDispatcher;
+	std::list<CString> m_excludedWndClasses;
 };

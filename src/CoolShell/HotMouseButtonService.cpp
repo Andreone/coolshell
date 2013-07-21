@@ -14,38 +14,42 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/.
 
 #include "stdafx.h"
-#include "MouseOverTitleBar.h"
+#include "HotMouseButtonService.h"
 
 #include <boost/bind.hpp>
 
-#include "CoolShellLib\WinApi.h"
 #include "CoolShellLib\Logging.h"
+#include "CoolShellLib\WinApi.h"
 
+#include "CoolShellConfiguration.h"
 #include "WindowAction.h"
 #include "WindowMinimizer.h"
 #include "WindowRoller.h"
 
-MouseOverTitleBar::MouseOverTitleBar() :
-    IMouseModule(),
+HotMouseButtonService::HotMouseButtonService(std::shared_ptr<IMouseEventDispatcher>& mouseEventDispatcher) :
+	m_mouseEventDispatcher(mouseEventDispatcher),
     m_actions()
 { 
 }
 
-MouseOverTitleBar::~MouseOverTitleBar()
+HotMouseButtonService::~HotMouseButtonService()
 {
 }
 
-void MouseOverTitleBar::RegisterAction( UINT area, UINT mouseEvent, MouseAction action )
+void HotMouseButtonService::RegisterAction( UINT area, UINT mouseEvent, MouseAction action )
 {
     m_actions.insert(MouseActionMapPair(std::make_tuple(area, mouseEvent), action));
 }
 
-void MouseOverTitleBar::Setup(IMouseEventDispatcher& dispatcher)
+void HotMouseButtonService::Initialize(const HotMouseButtonServiceConfiguration& configuration)
 {
-    dispatcher.WheelEvent().connect(boost::bind(&MouseOverTitleBar::OnMouseEvent, this, _1));
-    dispatcher.MButtonUpEvent().connect(boost::bind(&MouseOverTitleBar::OnMouseEvent, this, _1));
-    dispatcher.RButtonUpEvent().connect(boost::bind(&MouseOverTitleBar::OnMouseEvent, this, _1));
-    dispatcher.RButtonDownEvent().connect(boost::bind(&MouseOverTitleBar::OnMouseEvent, this, _1));
+	if(!configuration.enabled)
+		return;
+
+	m_mouseEventDispatcher->WheelEvent().connect(boost::bind(&HotMouseButtonService::OnMouseEvent, this, _1));
+    m_mouseEventDispatcher->MButtonUpEvent().connect(boost::bind(&HotMouseButtonService::OnMouseEvent, this, _1));
+    m_mouseEventDispatcher->RButtonUpEvent().connect(boost::bind(&HotMouseButtonService::OnMouseEvent, this, _1));
+    m_mouseEventDispatcher->RButtonDownEvent().connect(boost::bind(&HotMouseButtonService::OnMouseEvent, this, _1));
 
     RegisterAction(HTMINBUTTON, WM_RBUTTONUP, [] (HWND hWnd, WindowsHooks::LowLevelMouseEventArgs& args) {
         TheWindowMinimizer::Instance().MinimizeWindow(hWnd);
@@ -83,7 +87,7 @@ void MouseOverTitleBar::Setup(IMouseEventDispatcher& dispatcher)
     } );
 }
 
-void MouseOverTitleBar::OnMouseEvent(WindowsHooks::LowLevelMouseEventArgs& args)
+void HotMouseButtonService::OnMouseEvent(WindowsHooks::LowLevelMouseEventArgs& args)
 {
     if(args.IsHandled() || args.IsInjected())
         return;

@@ -187,16 +187,17 @@
     <ClInclude Include="IMouseEventDispatcher.h" />
     <ClInclude Include="IMouseModule.h" />
     <ClInclude Include="MouseEventDispatcher.h" />
-    <ClInclude Include="MouseOverTitleBar.h" />
+    <ClInclude Include="HotMouseButtonService.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
-    <ClInclude Include="WheelUnderCursor.h" />
+    <ClInclude Include="WheelUnderCursorService.h" />
     <ClInclude Include="WindowClassFilter.h" />
     <ClInclude Include="WindowMinimizer.h" />
     <ClInclude Include="WindowRoller.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CoolShellConfiguration.cpp" />
     <ClCompile Include="WindowAction.cpp" />
     <ClCompile Include="CoolShell.cpp" />
     <ClCompile Include="CoolShellApp.cpp" />
@@ -204,14 +205,14 @@
     <ClCompile Include="DragWindowManager.cpp" />
     <ClCompile Include="DragWindowModule.cpp" />
     <ClCompile Include="MouseEventDispatcher.cpp" />
-    <ClCompile Include="MouseOverTitleBar.cpp" />
+    <ClCompile Include="HotMouseButtonService.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="WheelUnderCursor.cpp" />
+    <ClCompile Include="WheelUnderCursorService.cpp" />
     <ClCompile Include="WindowClassFilter.cpp" />
     <ClCompile Include="WindowMinimizer.cpp" />
     <ClCompile Include="WindowRoller.cpp" />

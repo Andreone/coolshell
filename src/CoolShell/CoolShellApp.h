@@ -17,9 +17,11 @@
 
 #include "CoolShellMainWnd.h"
 #include "IApplication.h"
+
+#include "DragWindowModule.h"
+#include "HotMouseButtonService.h"
 #include "MouseEventDispatcher.h"
-#include "MouseOverTitleBar.h"
-#include "WheelUnderCursor.h"
+#include "WheelUnderCursorService.h"
 
 class CoolShellApp : public CWinApp,
                      public IApplication
@@ -29,7 +31,7 @@ public:
     virtual ~CoolShellApp();
 
 	// CWinApp
-    virtual BOOL InitInstance() override;
+    BOOL InitInstance() override;
     
     // IApplication implementation
     void Quit(UINT exitCode) override;
@@ -44,9 +46,9 @@ private:
 	void ExitInstance();
 
 	std::shared_ptr<MouseEventDispatcher> m_mouseEventDispatcher;
-    std::shared_ptr<WheelUnderCursor> m_wheelUnderCursor;
-    std::shared_ptr<MouseOverTitleBar> m_mouseOverTitleBarManager;
-    std::shared_ptr<IMouseModule> m_dragModule;
+    std::shared_ptr<WheelUnderCursorService> m_wheelUnderCursorService;
+    std::shared_ptr<HotMouseButtonService> m_hotMouseButtonService;
+    std::shared_ptr<DragWindowModule> m_dragWindowService;
     CoolShellMainWnd m_mainWindow;
     bool m_isPaused;
 };

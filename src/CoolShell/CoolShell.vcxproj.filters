@@ -51,12 +51,6 @@
     <ClInclude Include="MouseEventDispatcher.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MouseOverTitleBar.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="WheelUnderCursor.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="WindowClassFilter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -73,6 +67,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="WindowAction.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="HotMouseButtonService.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="WheelUnderCursorService.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -95,12 +95,6 @@
     <ClCompile Include="MouseEventDispatcher.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="MouseOverTitleBar.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="WheelUnderCursor.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="WindowClassFilter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -114,6 +108,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="WindowAction.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="HotMouseButtonService.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="WheelUnderCursorService.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CoolShellConfiguration.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

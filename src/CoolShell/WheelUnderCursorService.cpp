@@ -14,7 +14,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/.
 
 #include "stdafx.h"
-#include "WheelUnderCursor.h"
+#include "WheelUnderCursorService.h"
 
 #include "CoolShellLib\WinApi.h"
 #include "CoolShellLib\Logging.h"
@@ -22,31 +22,31 @@
 
 #include "CoolShellConfiguration.h"
 
-WheelUnderCursor::WheelUnderCursor(std::shared_ptr<IMouseEventDispatcher>& mouseEventDispatcher) :
+WheelUnderCursorService::WheelUnderCursorService(std::shared_ptr<IMouseEventDispatcher>& mouseEventDispatcher) :
 	m_mouseEventDispatcher(mouseEventDispatcher),
 	m_excludedWndClasses()
 {
 }
 
-void WheelUnderCursor::Initialize(const WheelUnderCursorConfiguration& configuration)
+void WheelUnderCursorService::Initialize(const WheelUnderCursorServiceConfiguration& configuration)
 {
 	if(!configuration.enabled)
 		return;
 
-	m_mouseEventDispatcher->WheelEvent().connect(std::bind(&WheelUnderCursor::OnWheel, this, std::placeholders::_1));
-    m_mouseEventDispatcher->HWheelEvent().connect(std::bind(&WheelUnderCursor::OnWheel, this, std::placeholders::_1));
+	m_mouseEventDispatcher->WheelEvent().connect(std::bind(&WheelUnderCursorService::OnWheel, this, std::placeholders::_1));
+    m_mouseEventDispatcher->HWheelEvent().connect(std::bind(&WheelUnderCursorService::OnWheel, this, std::placeholders::_1));
 
 	m_excludedWndClasses = configuration.windowClassExclusionList;
 }
 
 
-bool WheelUnderCursor::IsWindowClassExcluded(const CString& s) const
+bool WheelUnderCursorService::IsWindowClassExcluded(const CString& s) const
 {
     return m_excludedWndClasses.end() != std::find(m_excludedWndClasses.begin(), m_excludedWndClasses.end(), s);
 }
 
 
-void WheelUnderCursor::OnWheel(WindowsHooks::LowLevelMouseEventArgs& args)
+void WheelUnderCursorService::OnWheel(WindowsHooks::LowLevelMouseEventArgs& args)
 {
     HWND hWnd = ::WindowFromPoint(args.GetPoint());
     if(!::IsWindow(hWnd))

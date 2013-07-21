@@ -27,7 +27,6 @@
 
 #include "AppConstants.h"
 #include "CoolShellConfiguration.h"
-#include "DragWindowModule.h"
 
 using namespace WindowsHooks;
 
@@ -36,9 +35,9 @@ CoolShellApp::CoolShellApp() :
     CWinApp(),
     IApplication(),
     m_mouseEventDispatcher(),
-    m_wheelUnderCursor(),
-    m_mouseOverTitleBarManager(),
-    m_dragModule(),
+    m_wheelUnderCursorService(),
+    m_hotMouseButtonService(),
+    m_dragWindowService(),
     m_mainWindow(),
     m_isPaused(false)
 {
@@ -56,31 +55,47 @@ void OnLLKeyboardEvent(LowLevelKeyboardEventArgs args)
 }
 
 
+CoolShellConfiguration GetCoolShellConfiguration()
+{
+	CoolShellConfiguration mainConfig;
+	
+	mainConfig.wheelUnderCursorServiceConfiguration.enabled = true;
+	//mainConfig.WheelUnderCursorServiceConfiguration.windowClassExclusionList.push_back("MozillaWindowClass");
+
+	MouseActionConfiguration mouseActionConfiguration;
+
+	mainConfig.hotMouseButtonServiceConfiguration.enabled = true;
+
+	mouseActionConfiguration.mouseEvent = Mouse::EventType::RightButtonUp;
+	mouseActionConfiguration.cursorLocation = CursorLocation::MinimizeButton;
+	mouseActionConfiguration.actionName = "MinimizeToTray";
+	mouseActionConfiguration.actionArgs.clear();
+	mainConfig.hotMouseButtonServiceConfiguration.mouseActions.push_back(mouseActionConfiguration);
+
+	return mainConfig;
+}
+
 BOOL CoolShellApp::InitInstance()
 {
     // create the main application window that holds the tray icon
     m_mainWindow.Create();
 
 	m_mouseEventDispatcher = std::make_shared<MouseEventDispatcher>();
+	auto coolShellConfig = GetCoolShellConfiguration();
 
-	CoolShellConfiguration mainConfig;
-	mainConfig.wheelUnderCursorConfiguration.enabled = true;
-	//mainConfig.wheelUnderCursorConfiguration.windowClassExclusionList.push_back("MozillaWindowClass");
+    m_hotMouseButtonService = std::make_shared<HotMouseButtonService>(std::dynamic_pointer_cast<IMouseEventDispatcher>(m_mouseEventDispatcher));
+	m_hotMouseButtonService->Initialize(coolShellConfig.hotMouseButtonServiceConfiguration);
 
-    m_mouseOverTitleBarManager = std::make_shared<MouseOverTitleBar>();
-    m_mouseOverTitleBarManager->Setup(*m_mouseEventDispatcher);
+	m_wheelUnderCursorService = std::make_shared<WheelUnderCursorService>(std::dynamic_pointer_cast<IMouseEventDispatcher>(m_mouseEventDispatcher));
+	m_wheelUnderCursorService->Initialize(coolShellConfig.wheelUnderCursorServiceConfiguration);
 
-	m_wheelUnderCursor = std::make_shared<WheelUnderCursor>(std::dynamic_pointer_cast<IMouseEventDispatcher>(m_mouseEventDispatcher));
-	m_wheelUnderCursor->Initialize(mainConfig.wheelUnderCursorConfiguration);
-
-    m_dragModule.reset(new DragWindowModule());
-    m_dragModule->Setup(*m_mouseEventDispatcher);
+    m_dragWindowService = std::make_shared<DragWindowModule>();
+    m_dragWindowService->Setup(*m_mouseEventDispatcher);
 
 	LowLevelMouseMonitor::Instance().GetEvent().connect(std::bind(&MouseEventDispatcher::OnLowLevelMouseEvent, std::ref(*m_mouseEventDispatcher), std::placeholders::_1));
     LowLevelMouseMonitor::Instance().Install();
     LOG_INFO(_T("LowLevelMouseMonitor installed"));
-    //LowLevelKeyboardMonitor::Instance().GetEvent().connect(boost::bind(&OnLLKeyboardEvent, _1));
-    //LowLevelKeyboardMonitor::Instance().Install();
+	
     return TRUE;
 }
 
