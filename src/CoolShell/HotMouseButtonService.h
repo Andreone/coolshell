@@ -29,7 +29,7 @@ class HotMouseButtonService : public boost::noncopyable
 public:
     typedef std::function<void (HWND, WindowsHooks::LowLevelMouseEventArgs&)> MouseAction;
 
-    HotMouseButtonService(std::shared_ptr<IMouseEventDispatcher>& mouseEventDispatcher);
+    HotMouseButtonService(std::shared_ptr<IMouseEventDispatcher> mouseEventDispatcher);
     virtual ~HotMouseButtonService();
 
 	void Initialize(const HotMouseButtonServiceConfiguration& configuration);

@@ -22,7 +22,7 @@
 
 #include "CoolShellConfiguration.h"
 
-WheelUnderCursorService::WheelUnderCursorService(std::shared_ptr<IMouseEventDispatcher>& mouseEventDispatcher) :
+WheelUnderCursorService::WheelUnderCursorService(std::shared_ptr<IMouseEventDispatcher> mouseEventDispatcher) :
 	m_mouseEventDispatcher(mouseEventDispatcher),
 	m_excludedWndClasses()
 {

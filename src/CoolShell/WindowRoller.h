@@ -23,15 +23,15 @@ class WindowRoller : public WindowClassFilter,
                      private boost::noncopyable
 {
 public:
-    virtual void ToggleRollWindow(HWND hWnd);
+    void ToggleRollWindow(HWND hWnd);
 
 protected:
     WindowRoller();
     virtual ~WindowRoller();
     friend struct Loki::CreateUsingNew<WindowRoller>;
 
-    virtual void RollWindow(HWND hWnd, const CRect& unrolledRect, const CRect& rolledRect);
-    virtual void UnrollWindow(HWND hWnd, const CRect& rolledRect, const CRect& unrolledRect);
+    void RollWindow(HWND hWnd, const CRect& unrolledRect, const CRect& rolledRect);
+    void UnrollWindow(HWND hWnd, const CRect& rolledRect, const CRect& unrolledRect);
 
 private:
     std::map<HWND, CRect> m_rolledWindows;

@@ -26,7 +26,7 @@
 #include "WindowMinimizer.h"
 #include "WindowRoller.h"
 
-HotMouseButtonService::HotMouseButtonService(std::shared_ptr<IMouseEventDispatcher>& mouseEventDispatcher) :
+HotMouseButtonService::HotMouseButtonService(std::shared_ptr<IMouseEventDispatcher> mouseEventDispatcher) :
 	m_mouseEventDispatcher(mouseEventDispatcher),
     m_actions()
 { 

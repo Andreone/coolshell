@@ -119,10 +119,10 @@ BOOL CoolShellApp::InitInstance()
 	m_mouseEventDispatcher = std::make_shared<MouseEventDispatcher>();
 	auto coolShellConfig = GetCoolShellConfiguration();
 
-    m_hotMouseButtonService = std::make_shared<HotMouseButtonService>(std::dynamic_pointer_cast<IMouseEventDispatcher>(m_mouseEventDispatcher));
+    m_hotMouseButtonService = std::make_shared<HotMouseButtonService>(m_mouseEventDispatcher);
 	m_hotMouseButtonService->Initialize(coolShellConfig.hotMouseButtonServiceConfiguration);
 
-	m_wheelUnderCursorService = std::make_shared<WheelUnderCursorService>(std::dynamic_pointer_cast<IMouseEventDispatcher>(m_mouseEventDispatcher));
+	m_wheelUnderCursorService = std::make_shared<WheelUnderCursorService>(m_mouseEventDispatcher);
 	m_wheelUnderCursorService->Initialize(coolShellConfig.wheelUnderCursorServiceConfiguration);
 
     m_dragWindowService = std::make_shared<DragWindowModule>();

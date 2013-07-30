@@ -24,7 +24,7 @@ struct WheelUnderCursorServiceConfiguration;
 class WheelUnderCursorService : public boost::noncopyable
 {
 public:
-	WheelUnderCursorService(std::shared_ptr<IMouseEventDispatcher>& mouseEventDispatcher);
+	WheelUnderCursorService(std::shared_ptr<IMouseEventDispatcher> mouseEventDispatcher);
 	virtual ~WheelUnderCursorService() { }
 
     void Initialize(const WheelUnderCursorServiceConfiguration& configuration);
