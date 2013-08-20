@@ -1,38 +1,64 @@
 #include "stdafx.h"
-#include "CoolShellLib\ScopeExitFunction.h"
+#include "CoolshellLib/ScopeExit.h"
 
-BOOST_AUTO_TEST_SUITE(TestScopeExitFunction)
+using namespace ScopeExit;
 
-BOOST_AUTO_TEST_CASE(Test_that_the_set_function_is_called_when_out_of_scope)
+BOOST_AUTO_TEST_SUITE(ScopeExitFunctionTests)
+
+BOOST_AUTO_TEST_CASE(Should_run_on_scope_exit)
 {
     int i = 0;
 
     {
-        ScopeExitFunction f([&] { i++; });
+        auto f = AtScopeExit([&] { i++; });
+
     }
 
     BOOST_CHECK_EQUAL(1, i);
 }
 
-BOOST_AUTO_TEST_CASE(Test_that_reset_with_a_new_function_will_call_the_previously_set_function_immediately)
-{
-    int i = 0;
-
-    ScopeExitFunction f([&] { i++; });
-    f.reset([&] { });
-    BOOST_CHECK_EQUAL(1, i);
-}
-
-BOOST_AUTO_TEST_CASE(Test_that_release_clears_and_that_the_previously_set_function_is_not_called_when_out_of_scope)
+BOOST_AUTO_TEST_CASE(Should_only_run_when_exception_occurs)
 {
     int i = 0;
 
     {
-        ScopeExitFunction f([&] { i++; });
-        f.release();
+        auto f = AtScopeFailure([&] { i++; });
     }
 
     BOOST_CHECK_EQUAL(0, i);
+
+    try
+    {
+        {
+            auto f = AtScopeFailure([&] { i++; });
+            throw std::exception();
+        }
+    }
+    catch(std::exception&) { }
+
+    BOOST_CHECK_EQUAL(1, i);
+}
+
+BOOST_AUTO_TEST_CASE(Should_only_run_when_no_exception_occurs)
+{
+    int i = 0;
+
+    {
+        auto f = AtScopeSuccess([&] { i++; });
+    }
+
+    BOOST_CHECK_EQUAL(1, i);
+
+    try
+    {
+        {
+            auto f = AtScopeSuccess([&] { i++; });
+            throw std::exception();
+        }
+    }
+    catch(std::exception&) { }
+
+    BOOST_CHECK_EQUAL(1, i);
 }
 
 BOOST_AUTO_TEST_SUITE_END( )

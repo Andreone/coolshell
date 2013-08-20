@@ -24,7 +24,6 @@
       <Filter>Logging</Filter>
     </ClInclude>
     <ClInclude Include="Version.h" />
-    <ClInclude Include="ScopeExitFunction.h" />
     <ClInclude Include="Timers.h" />
     <ClInclude Include="Handles.h" />
     <ClInclude Include="Keyboard.h" />
@@ -60,6 +59,7 @@
     <ClInclude Include="WindowsHooks\LowLevelMouseEventArgs.h">
       <Filter>WindowsHooks</Filter>
     </ClInclude>
+    <ClInclude Include="ScopeExit.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
