@@ -27,7 +27,6 @@ class DragWindowManager : public WindowClassFilter
 {
 public:
     DragWindowManager();
-    virtual ~DragWindowManager();
 
     void OnButtonDown(WindowsHooks::LowLevelMouseEventArgs& args);
     void OnButtonUp(WindowsHooks::LowLevelMouseEventArgs& args);

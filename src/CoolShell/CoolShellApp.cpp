@@ -34,8 +34,9 @@ CoolShellApp::CoolShellApp() :
     IApplication(),
     m_mouseEventDispatcher(),
     m_wheelUnderCursorService(),
-    m_hotMouseButtonService(),
-    m_dragWindowService(),
+    m_windowTitleBarService(),
+	m_dragWindowService(),
+	m_mediaRemoteService(),
     m_mainWindow(),
     m_isPaused(false)
 {
@@ -59,6 +60,10 @@ CoolShellConfiguration GetCoolShellConfiguration()
 	
 	mainConfig.wheelUnderCursorServiceConfiguration.enabled = true;
 	//mainConfig.WheelUnderCursorServiceConfiguration.windowClassExclusionList.push_back("MozillaWindowClass");
+
+	mainConfig.mediaRemoteServiceConfiguration.enabled = true;
+	mainConfig.mediaRemoteServiceConfiguration.windowClassToHandle.push_back(_T("Shell_TrayWnd"));
+	mainConfig.mediaRemoteServiceConfiguration.windowClassToHandle.push_back(_T("WorkerW"));
 
 	mainConfig.hotMouseButtonServiceConfiguration.enabled = true;
 
@@ -116,17 +121,21 @@ BOOL CoolShellApp::InitInstance()
     // create the main application window that holds the tray icon
     m_mainWindow.Create();
 
-	m_mouseEventDispatcher = std::make_shared<MouseEventDispatcher>();
 	auto coolShellConfig = GetCoolShellConfiguration();
 
-    m_hotMouseButtonService = std::make_shared<HotMouseButtonService>(m_mouseEventDispatcher);
-	m_hotMouseButtonService->Initialize(coolShellConfig.hotMouseButtonServiceConfiguration);
+	m_mouseEventDispatcher = std::make_shared<MouseEventDispatcher>();
+
+    m_windowTitleBarService = std::make_shared<WindowTitleBarService>(m_mouseEventDispatcher);
+	m_windowTitleBarService->Initialize(coolShellConfig.hotMouseButtonServiceConfiguration);
 
 	m_wheelUnderCursorService = std::make_shared<WheelUnderCursorService>(m_mouseEventDispatcher);
 	m_wheelUnderCursorService->Initialize(coolShellConfig.wheelUnderCursorServiceConfiguration);
 
     m_dragWindowService = std::make_shared<DragWindowModule>();
     m_dragWindowService->Setup(*m_mouseEventDispatcher);
+
+	m_mediaRemoteService = std::make_shared<MediaRemoteService>(m_mouseEventDispatcher);
+	m_mediaRemoteService->Initialize(coolShellConfig.mediaRemoteServiceConfiguration);
 
 	LowLevelMouseMonitor::Instance().GetEvent().connect(std::bind(&MouseEventDispatcher::OnLowLevelMouseEvent, std::ref(*m_mouseEventDispatcher), std::placeholders::_1));
     LowLevelMouseMonitor::Instance().Install();

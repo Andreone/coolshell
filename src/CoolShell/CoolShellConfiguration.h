@@ -54,15 +54,22 @@ struct MouseActionConfiguration
 	std::vector<int> modifierKeys;
 };
 
-struct HotMouseButtonServiceConfiguration
+struct WindowTitleBarServiceConfiguration
 {
 	bool enabled;
 	std::list<MouseActionConfiguration> mouseActions;
 	std::list<CString> windowClassExclusionList;
 };
 
+struct MediaRemoteServiceConfiguration
+{
+	bool enabled;
+	std::list<CString> windowClassToHandle;
+}; 
+
 struct CoolShellConfiguration
 {
-	HotMouseButtonServiceConfiguration hotMouseButtonServiceConfiguration;
+	MediaRemoteServiceConfiguration mediaRemoteServiceConfiguration;
+	WindowTitleBarServiceConfiguration hotMouseButtonServiceConfiguration;
 	WheelUnderCursorServiceConfiguration wheelUnderCursorServiceConfiguration;
 };

@@ -24,10 +24,6 @@ WindowClassFilter::WindowClassFilter() :
 {
 }
 
-WindowClassFilter::~WindowClassFilter()
-{
-}
-
 void WindowClassFilter::FilterWindowClass(const CString& s)
 {
     m_excludedWndClasses.push_back(s);

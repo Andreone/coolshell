@@ -19,8 +19,9 @@
 #include "IApplication.h"
 
 #include "DragWindowModule.h"
-#include "HotMouseButtonService.h"
+#include "WindowTitleBarService.h"
 #include "MouseEventDispatcher.h"
+#include "MediaRemoteService.h"
 #include "WheelUnderCursorService.h"
 
 class CoolShellApp : public CWinApp,
@@ -47,8 +48,9 @@ private:
 
 	std::shared_ptr<MouseEventDispatcher> m_mouseEventDispatcher;
     std::shared_ptr<WheelUnderCursorService> m_wheelUnderCursorService;
-    std::shared_ptr<HotMouseButtonService> m_hotMouseButtonService;
+    std::shared_ptr<WindowTitleBarService> m_windowTitleBarService;
     std::shared_ptr<DragWindowModule> m_dragWindowService;
-    CoolShellMainWnd m_mainWindow;
+	std::shared_ptr<MediaRemoteService> m_mediaRemoteService;
+	CoolShellMainWnd m_mainWindow;
     bool m_isPaused;
 };

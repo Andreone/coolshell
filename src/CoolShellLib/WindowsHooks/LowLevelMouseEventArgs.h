@@ -37,6 +37,10 @@ public:
     DWORD GetTimeStamp() const			    { return m_pHookStruct->time; }
     DWORD GetMouseData() const              { return m_pHookStruct->mouseData; }
 
+	short GetWheelDelta() const { return GET_WHEEL_DELTA_WPARAM(GetMouseData()); }
+	WORD GetKeyState() const { return GET_KEYSTATE_WPARAM(GetMouseData()); }
+	WORD GetXButton() const { return GET_XBUTTON_WPARAM(GetMouseData()); }
+
 protected:
     UINT m_msg;
     MSLLHOOKSTRUCT* m_pHookStruct;

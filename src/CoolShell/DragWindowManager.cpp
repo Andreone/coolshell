@@ -37,10 +37,6 @@ DragWindowManager::DragWindowManager() :
 {
 }
 
-DragWindowManager::~DragWindowManager()
-{
-}
-
 bool DragWindowManager::IsWindowToProcess(HWND hWnd) const
 {
     if(!::IsWindow(hWnd))

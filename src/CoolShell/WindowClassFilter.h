@@ -19,7 +19,7 @@ class WindowClassFilter
 {
 public:
     WindowClassFilter();;
-    virtual ~WindowClassFilter();
+	virtual ~WindowClassFilter() {}
 
     virtual void FilterWindowClass(const CString& s);
     virtual bool IsWindowClassFiltered(HWND hWnd) const;

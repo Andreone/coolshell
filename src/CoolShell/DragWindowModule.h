@@ -23,7 +23,6 @@ class DragWindowModule : public IMouseModule
 {
 public:
     DragWindowModule();
-    virtual ~DragWindowModule();
 
     void Setup(IMouseEventDispatcher& dispatcher) override;
 

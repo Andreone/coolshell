@@ -22,17 +22,16 @@
 
 #include "IMouseEventDispatcher.h"
 
-struct HotMouseButtonServiceConfiguration;
+struct WindowTitleBarServiceConfiguration;
 
-class HotMouseButtonService : public boost::noncopyable
+class WindowTitleBarService : public boost::noncopyable
 {
 public:
     typedef std::function<void (HWND, WindowsHooks::LowLevelMouseEventArgs&)> MouseAction;
 
-    HotMouseButtonService(std::shared_ptr<IMouseEventDispatcher> mouseEventDispatcher);
-    virtual ~HotMouseButtonService();
+    WindowTitleBarService(std::shared_ptr<IMouseEventDispatcher> mouseEventDispatcher);
 
-	void Initialize(const HotMouseButtonServiceConfiguration& configuration);
+	void Initialize(const WindowTitleBarServiceConfiguration& configuration);
 
 protected:
     void RegisterAction(UINT area, UINT mouseEvent, MouseAction action);

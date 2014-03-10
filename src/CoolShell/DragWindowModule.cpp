@@ -26,10 +26,6 @@ DragWindowModule::DragWindowModule() :
 {
 }
 
-DragWindowModule::~DragWindowModule()
-{
-}
-
 void DragWindowModule::Setup(IMouseEventDispatcher& dispatcher)
 {
     {

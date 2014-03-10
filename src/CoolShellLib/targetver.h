@@ -21,5 +21,5 @@
 //#define _WIN32_WINNT_WIN7                   0x0601
 //#define _WIN32_WINNT_WIN8                   0x0602
 
-#define _WIN32_WINNT 0x0502 // XP SP2
-#include <SDKDDKVer.h>
+//#define _WIN32_WINNT 0x0502 // XP SP2
+//#include <SDKDDKVer.h>

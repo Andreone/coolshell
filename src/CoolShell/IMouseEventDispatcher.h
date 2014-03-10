@@ -22,13 +22,16 @@ struct IMouseEventDispatcher
 {
     typedef boost::signals2::signal<void (WindowsHooks::LowLevelMouseEventArgs&)> LowLevelMouseEvent;
 
-    virtual LowLevelMouseEvent& LButtonDownEvent() = 0;
+	virtual LowLevelMouseEvent& MouseEvent() = 0;
+	virtual LowLevelMouseEvent& LButtonDownEvent() = 0;
     virtual LowLevelMouseEvent& LButtonUpEvent() = 0;
     virtual LowLevelMouseEvent& RButtonDownEvent() = 0;
     virtual LowLevelMouseEvent& RButtonUpEvent() = 0;
     virtual LowLevelMouseEvent& MButtonDownEvent() = 0;
     virtual LowLevelMouseEvent& MButtonUpEvent() = 0;
-    virtual LowLevelMouseEvent& WheelEvent() = 0;
+	virtual LowLevelMouseEvent& XButtonDownEvent() = 0;
+	virtual LowLevelMouseEvent& XButtonUpEvent() = 0;
+	virtual LowLevelMouseEvent& WheelEvent() = 0;
     virtual LowLevelMouseEvent& HWheelEvent() = 0;
     virtual LowLevelMouseEvent& MouseMoveEvent() = 0;
 };
