@@ -129,3 +129,37 @@ task :cppcheck do
   `xml tr tools\\cppcheck\\pretty_html_report.xslt #{xml_result} > #{html_report}`
   FileUtils.rm(xml_result) if File.exist?(xml_result)
 end
+
+################################################################################
+
+def clean_directory(root_dir)
+  FileList.new(File.join(root_dir, '**/bin'),
+               File.join(root_dir, '**/obj'),
+               File.join(root_dir, '**/artifacts'),
+               File.join(root_dir, '**/doxydoc'),
+               File.join(root_dir, '**/ipch'),
+               File.join(root_dir, '**/logs'),
+               File.join(root_dir, '**/*.bak'),
+               File.join(root_dir, '**/*.dmp'),
+               File.join(root_dir, '**/*.ilk'),
+               File.join(root_dir, '**/*.orig'),
+               File.join(root_dir, '**/*.obj'),
+               File.join(root_dir, '**/*.pch'),
+               File.join(root_dir, '**/*.sdf'),
+               File.join(root_dir, '**/*.suo'),
+               File.join(root_dir, '**/_ReSharper.*')
+               ).each do |item|
+    if File.file?(item)
+      File.delete(item)
+      puts "deleted file #{item}"
+    elsif File.directory?(item)
+      FileUtils.remove_dir(item)
+      puts "deleted directory #{item}"
+    end
+  end
+end
+
+desc 'Delete temp items (bin, obj, ...) from the repo'
+task :clean_repo do
+  clean_directory(File.join(Rake.application.original_dir, 'src'))
+end
