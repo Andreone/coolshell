@@ -4,6 +4,8 @@
 #include <boost/test/unit_test_log.hpp>
 #include <boost/test/results_reporter.hpp>
 
+#include "vld.h"
+
 struct InitTests
 {
     InitTests()
