@@ -28,7 +28,6 @@
     <ClInclude Include="Handles.h" />
     <ClInclude Include="Keyboard.h" />
     <ClInclude Include="Mouse.h" />
-    <ClInclude Include="SystemInfo.h" />
     <ClInclude Include="WinApi.h" />
     <ClInclude Include="WinVersionInfo.h" />
     <ClInclude Include="ClickAlgo.h" />
@@ -73,7 +72,6 @@
     <ClCompile Include="Version.cpp" />
     <ClCompile Include="Keyboard.cpp" />
     <ClCompile Include="Mouse.cpp" />
-    <ClCompile Include="SystemInfo.cpp" />
     <ClCompile Include="WinApi.cpp" />
     <ClCompile Include="WinVersionInfo.cpp" />
     <ClCompile Include="ClickAlgo.cpp" />

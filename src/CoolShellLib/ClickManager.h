@@ -20,7 +20,8 @@
 #include "timers.h"
 #include <functional>
 
-class ClickManager : protected ClickAlgo, protected boost::noncopyable
+class ClickManager : protected ClickAlgo,
+					 protected boost::noncopyable
 {
 public:
     typedef std::function<void ()> ClickDelegate;

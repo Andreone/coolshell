@@ -33,7 +33,6 @@ public:
         CDialog(IDD_ABOUTBOX, pParent)
     {
     }
-    virtual ~CAboutBox() { }
 
 protected:
     virtual BOOL OnInitDialog()

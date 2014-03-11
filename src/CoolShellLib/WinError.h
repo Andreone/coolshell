@@ -36,24 +36,24 @@ class WinError : public std::runtime_error
 {
 public:
    WinError(DWORD code = ::GetLastError(), const char* userMessage=nullptr) throw() :
-        std::runtime_error(get_error_message(code, userMessage)),
+        std::runtime_error(GetErrorMessage(code, userMessage)),
         m_errCode(code)
     { }
 
     WinError(const char* userMessage, DWORD code = ::GetLastError()) throw() :
-        std::runtime_error(get_error_message(code, userMessage)),
+        std::runtime_error(GetErrorMessage(code, userMessage)),
         m_errCode(code)
     { }
 
     virtual ~WinError() throw()
     { }
 
-    DWORD code() throw()
+    DWORD GetErrorCode() throw()
     {
         return m_errCode;
     }
 
-    static std::string get_error_message(DWORD errCode, const char* userMessage = nullptr) throw()
+    static std::string GetErrorMessage(DWORD errCode, const char* userMessage = nullptr) throw()
     {
         std::ostringstream stream;
         LPSTR pBuffer = nullptr;
