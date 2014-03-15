@@ -40,12 +40,9 @@ WindowMinimizer::~WindowMinimizer()
             RestoreWindow(m_minimizedWindowIcons.begin()->first);
         }
     }
-    catch (std::exception& e)
+    catch (std::exception&)
     {
-        TRACE("Exception in ~WindowMinimizer: %s\n", e.what());
     }
-
-    TRACE("Deleted WindowMinimizer\n");
 }
 
 void WindowMinimizer::MinimizeWindow(HWND hWnd)
@@ -126,7 +123,7 @@ void WindowMinimizer::ContextMenu(NotifyIcon& icon, HWND hWnd)
 
     CPoint pt = GetCursorPos();
     ::SetForegroundWindow(icon.GetOwnerWindow());
-    UINT selected = ::TrackPopupMenu(menu.get(), TPM_RETURNCMD | TPM_NONOTIFY, pt.x, pt.y, 0, icon.GetOwnerWindow(), NULL);
+    auto selected = ::TrackPopupMenu(menu.get(), TPM_RETURNCMD | TPM_NONOTIFY, pt.x, pt.y, 0, icon.GetOwnerWindow(), NULL);
 
     switch (selected)
     {
@@ -137,7 +134,6 @@ void WindowMinimizer::ContextMenu(NotifyIcon& icon, HWND hWnd)
         TheWindowMinimizer::Instance().CloseWindow(hWnd);
         break;
     default:
-        TRACE("No case for menu command: %d\n", selected);
         break;
     }
 }

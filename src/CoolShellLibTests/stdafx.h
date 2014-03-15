@@ -8,6 +8,7 @@
 #include "targetver.h"
 
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
+#define NOMINMAX
 
 // This Win32++ file must be included before windows.h (required by Win32++ to set some important macros)
 #include "Win32xx\wincore.h"
@@ -23,6 +24,15 @@
 #include <tchar.h>
 
 // STL header files
+#include <algorithm>
+#include <functional>
 #include <iostream>
+#include <list>
+#include <map>
+#include <memory>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 #include <boost/test/unit_test.hpp>

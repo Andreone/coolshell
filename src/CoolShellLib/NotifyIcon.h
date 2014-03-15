@@ -18,8 +18,8 @@
 #include <unordered_map>
 
 #include <boost/noncopyable.hpp>
-#include <boost/signals2.hpp>
 #include <boost/optional.hpp>
+#include <boost/signals2.hpp>
 
 /**
  * \brief Represents an icon into the system notification area

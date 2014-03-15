@@ -15,10 +15,11 @@
 
 #pragma once
 
-#include "ClickAlgo.h"
-#include "boost/noncopyable.hpp"
-#include "timers.h"
 #include <functional>
+#include <boost/noncopyable.hpp>
+
+#include "ClickAlgo.h"
+#include "Timers.h"
 
 class ClickManager : protected ClickAlgo,
 					 protected boost::noncopyable

@@ -32,9 +32,9 @@ WindowTitleBarService::WindowTitleBarService(std::shared_ptr<IMouseEventDispatch
 { 
 }
 
-void WindowTitleBarService::RegisterAction( UINT area, UINT mouseEvent, MouseAction action )
+void WindowTitleBarService::RegisterAction(UINT area, UINT mouseEvent, MouseAction action)
 {
-    m_actions.insert(MouseActionMapPair(std::make_tuple(area, mouseEvent), action));
+    m_actions.insert(std::make_pair(std::make_tuple(area, mouseEvent), action));
 }
 
 void WindowTitleBarService::Initialize(const WindowTitleBarServiceConfiguration& configuration)
@@ -47,7 +47,7 @@ void WindowTitleBarService::Initialize(const WindowTitleBarServiceConfiguration&
     m_mouseEventDispatcher->RButtonUpEvent().connect(boost::bind(&WindowTitleBarService::OnMouseEvent, this, _1));
     m_mouseEventDispatcher->RButtonDownEvent().connect(boost::bind(&WindowTitleBarService::OnMouseEvent, this, _1));
 
-    RegisterAction(HTMINBUTTON, WM_RBUTTONUP, [] (HWND hWnd, WindowsHooks::LowLevelMouseEventArgs& args) {
+	RegisterAction(HTMINBUTTON, WM_RBUTTONUP, [](HWND hWnd, WindowsHooks::LowLevelMouseEventArgs& args) {
         TheWindowMinimizer::Instance().MinimizeWindow(hWnd);
         args.SetHandled(true);
     } );
