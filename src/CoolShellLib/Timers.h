@@ -15,12 +15,9 @@
 
 #pragma once
 
-#include <functional>
 #include <unordered_map>
-
-#include <boost/noncopyable.hpp>
-
-#include "CoolShellLib/Debug.h"
+#include <functional>
+#include "boost/noncopyable.hpp"
 
 /**
  * \class timers::win_timer

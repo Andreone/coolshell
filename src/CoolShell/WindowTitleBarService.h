@@ -41,5 +41,6 @@ private:
 	std::shared_ptr<IMouseEventDispatcher> m_mouseEventDispatcher;
 
 	typedef std::map<std::tuple<UINT,UINT>, MouseAction> MouseActionMap;
+    typedef std::pair<std::tuple<UINT,UINT>, MouseAction> MouseActionMapPair;
     MouseActionMap m_actions;
 };
