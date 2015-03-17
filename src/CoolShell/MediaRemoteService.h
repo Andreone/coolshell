@@ -22,57 +22,57 @@
 class MediaRemote
 {
 public:
-	void VolumeUp()
-	{
-		SendInput(VK_VOLUME_UP);
-	}
+    void VolumeUp()
+    {
+        SendInput(VK_VOLUME_UP);
+    }
 
-	void VolumeDown()
-	{
-		SendInput(VK_VOLUME_DOWN);
-	}
+    void VolumeDown()
+    {
+        SendInput(VK_VOLUME_DOWN);
+    }
 
-	void VolumeMute()
-	{
-		SendInput(VK_VOLUME_MUTE);
-	}
+    void VolumeMute()
+    {
+        SendInput(VK_VOLUME_MUTE);
+    }
 
-	void Stop()
-	{
-		SendInput(VK_MEDIA_STOP);
-	}
+    void Stop()
+    {
+        SendInput(VK_MEDIA_STOP);
+    }
 
-	void PlayPause()
-	{
-		SendInput(VK_MEDIA_PLAY_PAUSE);
-	}
+    void PlayPause()
+    {
+        SendInput(VK_MEDIA_PLAY_PAUSE);
+    }
 
-	void NextTrack()
-	{
-		SendInput(VK_MEDIA_NEXT_TRACK);
-	}
+    void NextTrack()
+    {
+        SendInput(VK_MEDIA_NEXT_TRACK);
+    }
 
-	void PreviousTrack()
-	{
-		SendInput(VK_MEDIA_PREV_TRACK);
-	}
+    void PreviousTrack()
+    {
+        SendInput(VK_MEDIA_PREV_TRACK);
+    }
 
 private:
-	void SendInput(WORD vk)
-	{
-		INPUT input;
-		memset(&input, 0, sizeof(INPUT));
+    void SendInput(WORD vk)
+    {
+        INPUT input;
+        memset(&input, 0, sizeof(INPUT));
 
-		input.type = INPUT_KEYBOARD;
-		input.ki.wVk = vk;
+        input.type = INPUT_KEYBOARD;
+        input.ki.wVk = vk;
 
-		// key down
-		::SendInput(1, &input, sizeof(INPUT));
+        // key down
+        ::SendInput(1, &input, sizeof(INPUT));
 
-		// key up
-		input.ki.dwFlags = KEYEVENTF_KEYUP;
-		::SendInput(1, &input, sizeof(INPUT));
-	}
+        // key up
+        input.ki.dwFlags = KEYEVENTF_KEYUP;
+        ::SendInput(1, &input, sizeof(INPUT));
+    }
 };
 
 struct MediaRemoteServiceConfiguration;
@@ -80,15 +80,15 @@ struct MediaRemoteServiceConfiguration;
 class MediaRemoteService : public boost::noncopyable
 {
 public:
-	MediaRemoteService(std::shared_ptr<IMouseEventDispatcher> mouseEventDispatcher);
+    MediaRemoteService(std::shared_ptr<IMouseEventDispatcher> mouseEventDispatcher);
 
-	void Initialize(const MediaRemoteServiceConfiguration& configuration);
+    void Initialize(const MediaRemoteServiceConfiguration& configuration);
 
 private:
     void OnMouseEvent(WindowsHooks::LowLevelMouseEventArgs& args);
-	bool IsWindowToHandle(const CString& s) const;
-		
-	std::shared_ptr<IMouseEventDispatcher> m_mouseEventDispatcher;
-	MediaRemote m_mediaRemote;
-	std::list<CString> m_wndClasses;
+    bool IsWindowToHandle(const CString& s) const;
+        
+    std::shared_ptr<IMouseEventDispatcher> m_mouseEventDispatcher;
+    MediaRemote m_mediaRemote;
+    std::list<CString> m_wndClasses;
 };

@@ -23,28 +23,28 @@
 #include "CoolShellConfiguration.h"
 
 MediaRemoteService::MediaRemoteService(std::shared_ptr<IMouseEventDispatcher> mouseEventDispatcher) :
-	m_mouseEventDispatcher(mouseEventDispatcher),
-	m_mediaRemote(),
-	m_wndClasses()
+    m_mouseEventDispatcher(mouseEventDispatcher),
+    m_mediaRemote(),
+    m_wndClasses()
 {
 }
 
 void MediaRemoteService::Initialize(const MediaRemoteServiceConfiguration& configuration)
 {
-	if(!configuration.enabled)
-		return;
+    if(!configuration.enabled)
+        return;
 
-	m_mouseEventDispatcher->WheelEvent().connect(std::bind(&MediaRemoteService::OnMouseEvent, this, std::placeholders::_1));
-	m_mouseEventDispatcher->XButtonDownEvent().connect(std::bind(&MediaRemoteService::OnMouseEvent, this, std::placeholders::_1));
-	m_mouseEventDispatcher->MButtonDownEvent().connect(std::bind(&MediaRemoteService::OnMouseEvent, this, std::placeholders::_1));
+    m_mouseEventDispatcher->WheelEvent().connect(std::bind(&MediaRemoteService::OnMouseEvent, this, std::placeholders::_1));
+    m_mouseEventDispatcher->XButtonDownEvent().connect(std::bind(&MediaRemoteService::OnMouseEvent, this, std::placeholders::_1));
+    m_mouseEventDispatcher->MButtonDownEvent().connect(std::bind(&MediaRemoteService::OnMouseEvent, this, std::placeholders::_1));
 
-	m_wndClasses = configuration.windowClassToHandle;
+    m_wndClasses = configuration.windowClassToHandle;
 }
 
 
 bool MediaRemoteService::IsWindowToHandle(const CString& s) const
 {
-	return m_wndClasses.end() != std::find(m_wndClasses.begin(), m_wndClasses.end(), s);
+    return m_wndClasses.end() != std::find(m_wndClasses.begin(), m_wndClasses.end(), s);
 }
 
 void MediaRemoteService::OnMouseEvent(WindowsHooks::LowLevelMouseEventArgs& args)
@@ -53,51 +53,51 @@ void MediaRemoteService::OnMouseEvent(WindowsHooks::LowLevelMouseEventArgs& args
     if(!::IsWindow(hWnd))
         return;
 
-	CString windowClassName = WinApi::GetWindowClassName(WinApi::GetRootWindow(hWnd));
-	LOG_INFO(_T("MediaRemoteService - Window class under cursor is '%s'"), (LPCTSTR)windowClassName);
+    CString windowClassName = WinApi::GetWindowClassName(WinApi::GetRootWindow(hWnd));
+    LOG_INFO(_T("MediaRemoteService - Window class under cursor is '%s'"), (LPCTSTR)windowClassName);
 
-	if (m_wndClasses.end() == std::find(m_wndClasses.begin(), m_wndClasses.end(), windowClassName))
-	{
-		return;
-	}
+    if (m_wndClasses.end() == std::find(m_wndClasses.begin(), m_wndClasses.end(), windowClassName))
+    {
+        return;
+    }
 
-	switch (args.GetMessage())
-	{
-	case WM_MBUTTONDOWN:
-		m_mediaRemote.PlayPause();
-		args.SetHandled(true);
-		LOG_INFO(_T("MediaRemoteService - PlayPause"));
-		break;
+    switch (args.GetMessage())
+    {
+    case WM_MBUTTONDOWN:
+        m_mediaRemote.PlayPause();
+        args.SetHandled(true);
+        LOG_INFO(_T("MediaRemoteService - PlayPause"));
+        break;
 
-	case WM_MOUSEWHEEL:
-		if (args.GetWheelDelta() > 0)
-		{
-			LOG_INFO(_T("MediaRemoteService - VolumeUp"));
-			m_mediaRemote.VolumeUp();
-		}
-		else
-		{
-			m_mediaRemote.VolumeDown();
-			LOG_INFO(_T("MediaRemoteService - VolumeDown"));
-		}
-		args.SetHandled(true);
-		break;
+    case WM_MOUSEWHEEL:
+        if (args.GetWheelDelta() > 0)
+        {
+            LOG_INFO(_T("MediaRemoteService - VolumeUp"));
+            m_mediaRemote.VolumeUp();
+        }
+        else
+        {
+            m_mediaRemote.VolumeDown();
+            LOG_INFO(_T("MediaRemoteService - VolumeDown"));
+        }
+        args.SetHandled(true);
+        break;
 
-	case WM_XBUTTONDOWN:
-		if (args.GetXButton() == XBUTTON2)
-		{
-			m_mediaRemote.NextTrack();
-			LOG_INFO(_T("MediaRemoteService - NextTrack"));
-		}
-		else
-		{
-			m_mediaRemote.PreviousTrack();
-			LOG_INFO(_T("MediaRemoteService - PreviousTrack"));
-		}
-		args.SetHandled(true);
-		break;
+    case WM_XBUTTONDOWN:
+        if (args.GetXButton() == XBUTTON2)
+        {
+            m_mediaRemote.NextTrack();
+            LOG_INFO(_T("MediaRemoteService - NextTrack"));
+        }
+        else
+        {
+            m_mediaRemote.PreviousTrack();
+            LOG_INFO(_T("MediaRemoteService - PreviousTrack"));
+        }
+        args.SetHandled(true);
+        break;
 
-	default:
-		break;
-	}
+    default:
+        break;
+    }
 }

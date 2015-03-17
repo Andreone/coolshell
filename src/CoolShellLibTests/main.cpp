@@ -12,8 +12,8 @@ struct InitTests
     {
         // all passed test names are printed to the output
         // boost::unit_test::unit_test_log.set_threshold_level(boost::unit_test::log_test_units);
-		
-		// a very small report is printed to the output (passed tests count / total tests count)
+        
+        // a very small report is printed to the output (passed tests count / total tests count)
         boost::unit_test::results_reporter::set_level(boost::unit_test::SHORT_REPORT);
     }
 };

@@ -31,7 +31,7 @@ public:
     CoolShellApp();
     virtual ~CoolShellApp();
 
-	// CWinApp
+    // CWinApp
     BOOL InitInstance() override;
     
     // IApplication implementation
@@ -44,13 +44,13 @@ public:
     void DoNotStartWithWindows() override;
 
 private:
-	void ExitInstance();
+    void ExitInstance();
 
-	std::shared_ptr<MouseEventDispatcher> m_mouseEventDispatcher;
+    std::shared_ptr<MouseEventDispatcher> m_mouseEventDispatcher;
     std::shared_ptr<WheelUnderCursorService> m_wheelUnderCursorService;
     std::shared_ptr<WindowTitleBarService> m_windowTitleBarService;
     std::shared_ptr<DragWindowModule> m_dragWindowService;
-	std::shared_ptr<MediaRemoteService> m_mediaRemoteService;
-	CoolShellMainWnd m_mainWindow;
+    std::shared_ptr<MediaRemoteService> m_mediaRemoteService;
+    CoolShellMainWnd m_mainWindow;
     bool m_isPaused;
 };

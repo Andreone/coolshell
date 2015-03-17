@@ -45,7 +45,7 @@ void ClickManager::StartTimer()
 {
     if (!m_timer.is_running())
     {
-		m_timer.start(::GetDoubleClickTime() / 2, [this] { return this->Tick(); });
+        m_timer.start(::GetDoubleClickTime() / 2, [this] { return this->Tick(); });
     }
 }
 

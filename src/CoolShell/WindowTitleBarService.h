@@ -31,16 +31,16 @@ public:
 
     WindowTitleBarService(std::shared_ptr<IMouseEventDispatcher> mouseEventDispatcher);
 
-	void Initialize(const WindowTitleBarServiceConfiguration& configuration);
+    void Initialize(const WindowTitleBarServiceConfiguration& configuration);
 
 protected:
     void RegisterAction(UINT area, UINT mouseEvent, MouseAction action);
     void OnMouseEvent(WindowsHooks::LowLevelMouseEventArgs& args);
 
 private:
-	std::shared_ptr<IMouseEventDispatcher> m_mouseEventDispatcher;
+    std::shared_ptr<IMouseEventDispatcher> m_mouseEventDispatcher;
 
-	typedef std::map<std::tuple<UINT,UINT>, MouseAction> MouseActionMap;
+    typedef std::map<std::tuple<UINT,UINT>, MouseAction> MouseActionMap;
     typedef std::pair<std::tuple<UINT,UINT>, MouseAction> MouseActionMapPair;
     MouseActionMap m_actions;
 };

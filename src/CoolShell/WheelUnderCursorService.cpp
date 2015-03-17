@@ -23,20 +23,20 @@
 #include "CoolShellConfiguration.h"
 
 WheelUnderCursorService::WheelUnderCursorService(std::shared_ptr<IMouseEventDispatcher> mouseEventDispatcher) :
-	m_mouseEventDispatcher(mouseEventDispatcher),
-	m_excludedWndClasses()
+    m_mouseEventDispatcher(mouseEventDispatcher),
+    m_excludedWndClasses()
 {
 }
 
 void WheelUnderCursorService::Initialize(const WheelUnderCursorServiceConfiguration& configuration)
 {
-	if(!configuration.enabled)
-		return;
+    if(!configuration.enabled)
+        return;
 
-	m_mouseEventDispatcher->WheelEvent().connect(std::bind(&WheelUnderCursorService::OnWheel, this, std::placeholders::_1));
+    m_mouseEventDispatcher->WheelEvent().connect(std::bind(&WheelUnderCursorService::OnWheel, this, std::placeholders::_1));
     m_mouseEventDispatcher->HWheelEvent().connect(std::bind(&WheelUnderCursorService::OnWheel, this, std::placeholders::_1));
 
-	m_excludedWndClasses = configuration.windowClassExclusionList;
+    m_excludedWndClasses = configuration.windowClassExclusionList;
 }
 
 
@@ -52,14 +52,14 @@ void WheelUnderCursorService::OnWheel(WindowsHooks::LowLevelMouseEventArgs& args
     if(!::IsWindow(hWnd))
         return;
 
-	CString windowClassName = WinApi::GetWindowClassName(WinApi::GetRootWindow(hWnd));
-	LOG_INFO(_T("Window class under cursor is '%s'"), (LPCTSTR)windowClassName);
+    CString windowClassName = WinApi::GetWindowClassName(WinApi::GetRootWindow(hWnd));
+    LOG_INFO(_T("Window class under cursor is '%s'"), (LPCTSTR)windowClassName);
 
-	if(m_excludedWndClasses.end() != std::find(m_excludedWndClasses.begin(), m_excludedWndClasses.end(), windowClassName))
-	{
-		LOG_INFO(_T("Ignored event: the window class '%s' is excluded"), (LPCTSTR)windowClassName);
-		return;
-	}
+    if(m_excludedWndClasses.end() != std::find(m_excludedWndClasses.begin(), m_excludedWndClasses.end(), windowClassName))
+    {
+        LOG_INFO(_T("Ignored event: the window class '%s' is excluded"), (LPCTSTR)windowClassName);
+        return;
+    }
 
     CPoint mousePos = Mouse::GetCursorPos();
 

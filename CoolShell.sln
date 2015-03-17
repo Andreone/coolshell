@@ -1,10 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Express 2012 for Windows Desktop
+# Visual Studio 2013
+VisualStudioVersion = 12.0.31101.0
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{5B8A2F20-4BDE-49BE-9306-F4820B7ECC81}"
 	ProjectSection(SolutionItems) = preProject
 		credits.txt = credits.txt
-		doxyfile = doxyfile
 		header.txt = header.txt
 		license.txt = license.txt
 	EndProjectSection

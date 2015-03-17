@@ -31,32 +31,32 @@ public:
     void OnLowLevelMouseEvent(WindowsHooks::LowLevelMouseEventArgs& args);
 
     // IMouseEventDispatcher interface
-	LowLevelMouseEvent& MouseEvent() override			{ return m_mouseEvent; }
-	LowLevelMouseEvent& LButtonDownEvent() override     { return m_LButtonDownEvent; }
+    LowLevelMouseEvent& MouseEvent() override			{ return m_mouseEvent; }
+    LowLevelMouseEvent& LButtonDownEvent() override     { return m_LButtonDownEvent; }
     LowLevelMouseEvent& LButtonUpEvent() override       { return m_LButtonUpEvent; }
     LowLevelMouseEvent& RButtonDownEvent() override     { return m_RButtonDownEvent; }
     LowLevelMouseEvent& RButtonUpEvent() override       { return m_RButtonUpEvent; }
-	LowLevelMouseEvent& MButtonDownEvent() override     { return m_MButtonDownEvent; }
-	LowLevelMouseEvent& MButtonUpEvent() override       { return m_MButtonUpEvent; }
-	LowLevelMouseEvent& XButtonDownEvent() override     { return m_XButtonDownEvent; }
-	LowLevelMouseEvent& XButtonUpEvent() override       { return m_XButtonUpEvent; }
-	LowLevelMouseEvent& WheelEvent() override           { return m_WheelEvent; }
+    LowLevelMouseEvent& MButtonDownEvent() override     { return m_MButtonDownEvent; }
+    LowLevelMouseEvent& MButtonUpEvent() override       { return m_MButtonUpEvent; }
+    LowLevelMouseEvent& XButtonDownEvent() override     { return m_XButtonDownEvent; }
+    LowLevelMouseEvent& XButtonUpEvent() override       { return m_XButtonUpEvent; }
+    LowLevelMouseEvent& WheelEvent() override           { return m_WheelEvent; }
     LowLevelMouseEvent& HWheelEvent() override          { return m_HWheelEvent; }
     LowLevelMouseEvent& MouseMoveEvent() override       { return m_MouseMoveEvent; }
 
 private:
-	void Dispatch(WindowsHooks::LowLevelMouseEventArgs& args);
+    void Dispatch(WindowsHooks::LowLevelMouseEventArgs& args);
 
-	LowLevelMouseEvent m_mouseEvent;
-	LowLevelMouseEvent m_LButtonDownEvent;
+    LowLevelMouseEvent m_mouseEvent;
+    LowLevelMouseEvent m_LButtonDownEvent;
     LowLevelMouseEvent m_LButtonUpEvent;
     LowLevelMouseEvent m_RButtonDownEvent;
     LowLevelMouseEvent m_RButtonUpEvent;
     LowLevelMouseEvent m_MButtonDownEvent;
     LowLevelMouseEvent m_MButtonUpEvent;
-	LowLevelMouseEvent m_XButtonDownEvent;
-	LowLevelMouseEvent m_XButtonUpEvent;
-	LowLevelMouseEvent m_WheelEvent;
+    LowLevelMouseEvent m_XButtonDownEvent;
+    LowLevelMouseEvent m_XButtonUpEvent;
+    LowLevelMouseEvent m_WheelEvent;
     LowLevelMouseEvent m_HWheelEvent;
     LowLevelMouseEvent m_MouseMoveEvent;
 };

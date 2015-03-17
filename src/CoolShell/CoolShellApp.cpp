@@ -35,8 +35,8 @@ CoolShellApp::CoolShellApp() :
     m_mouseEventDispatcher(),
     m_wheelUnderCursorService(),
     m_windowTitleBarService(),
-	m_dragWindowService(),
-	m_mediaRemoteService(),
+    m_dragWindowService(),
+    m_mediaRemoteService(),
     m_mainWindow(),
     m_isPaused(false)
 {
@@ -56,64 +56,64 @@ void OnLLKeyboardEvent(LowLevelKeyboardEventArgs args)
 
 CoolShellConfiguration GetCoolShellConfiguration()
 {
-	CoolShellConfiguration mainConfig;
-	
-	mainConfig.wheelUnderCursorServiceConfiguration.enabled = true;
-	//mainConfig.WheelUnderCursorServiceConfiguration.windowClassExclusionList.push_back("MozillaWindowClass");
+    CoolShellConfiguration mainConfig;
+    
+    mainConfig.wheelUnderCursorServiceConfiguration.enabled = true;
+    //mainConfig.WheelUnderCursorServiceConfiguration.windowClassExclusionList.push_back("MozillaWindowClass");
 
-	mainConfig.mediaRemoteServiceConfiguration.enabled = true;
-	mainConfig.mediaRemoteServiceConfiguration.windowClassToHandle.push_back(_T("Shell_TrayWnd"));
-	mainConfig.mediaRemoteServiceConfiguration.windowClassToHandle.push_back(_T("WorkerW"));
+    mainConfig.mediaRemoteServiceConfiguration.enabled = true;
+    mainConfig.mediaRemoteServiceConfiguration.windowClassToHandle.push_back(_T("Shell_TrayWnd"));
+    mainConfig.mediaRemoteServiceConfiguration.windowClassToHandle.push_back(_T("WorkerW"));
 
-	mainConfig.hotMouseButtonServiceConfiguration.enabled = true;
+    mainConfig.hotMouseButtonServiceConfiguration.enabled = true;
 
-	{
-		MouseActionConfiguration mouseActionConfiguration;
-		mouseActionConfiguration.mouseEvent = Mouse::EventType::RightButtonUp;
-		mouseActionConfiguration.cursorLocation = CursorLocation::MinimizeButton;
-		mouseActionConfiguration.actionType = ActionType::MinimizeToTray;
-		mainConfig.hotMouseButtonServiceConfiguration.mouseActions.push_back(mouseActionConfiguration);
-	}
-	{
-		MouseActionConfiguration mouseActionConfiguration;
-		mouseActionConfiguration.mouseEvent = Mouse::EventType::RightButtonUp;
-		mouseActionConfiguration.cursorLocation = CursorLocation::CloseButton;
-		mouseActionConfiguration.actionType = ActionType::ToggleAlwaysOnTop;
-		mainConfig.hotMouseButtonServiceConfiguration.mouseActions.push_back(mouseActionConfiguration);
-	}
-	{
-		MouseActionConfiguration mouseActionConfiguration;
-		mouseActionConfiguration.mouseEvent = Mouse::EventType::WheelUp;
-		mouseActionConfiguration.cursorLocation = CursorLocation::TitleBar;
-		mouseActionConfiguration.actionType = ActionType::SetAlwaysOnTop;
-		mainConfig.hotMouseButtonServiceConfiguration.mouseActions.push_back(mouseActionConfiguration);
-	}
-	{
-		MouseActionConfiguration mouseActionConfiguration;
-		mouseActionConfiguration.mouseEvent = Mouse::EventType::WheelDown;
-		mouseActionConfiguration.cursorLocation = CursorLocation::TitleBar;
-		mouseActionConfiguration.actionType = ActionType::UnsetAlwaysOnTop;
-		mainConfig.hotMouseButtonServiceConfiguration.mouseActions.push_back(mouseActionConfiguration);
-	}
-	{
-		MouseActionConfiguration mouseActionConfiguration;
-		mouseActionConfiguration.mouseEvent = Mouse::EventType::WheelUp;
-		mouseActionConfiguration.cursorLocation = CursorLocation::TitleBar;
-		mouseActionConfiguration.actionType = ActionType::DecreaseTransparency;
-		mouseActionConfiguration.actionArgs.push_back("10");
-		mouseActionConfiguration.modifierKeys.push_back(VK_LMENU);
-		mainConfig.hotMouseButtonServiceConfiguration.mouseActions.push_back(mouseActionConfiguration);
-	}
-	{
-		MouseActionConfiguration mouseActionConfiguration;
-		mouseActionConfiguration.mouseEvent = Mouse::EventType::WheelDown;
-		mouseActionConfiguration.cursorLocation = CursorLocation::TitleBar;
-		mouseActionConfiguration.actionType = ActionType::IncreaseTransparency;
-		mouseActionConfiguration.actionArgs.push_back("10");
-		mouseActionConfiguration.modifierKeys.push_back(VK_LMENU);
-		mainConfig.hotMouseButtonServiceConfiguration.mouseActions.push_back(mouseActionConfiguration);
-	}
-	return mainConfig;
+    {
+        MouseActionConfiguration mouseActionConfiguration;
+        mouseActionConfiguration.mouseEvent = Mouse::EventType::RightButtonUp;
+        mouseActionConfiguration.cursorLocation = CursorLocation::MinimizeButton;
+        mouseActionConfiguration.actionType = ActionType::MinimizeToTray;
+        mainConfig.hotMouseButtonServiceConfiguration.mouseActions.push_back(mouseActionConfiguration);
+    }
+    {
+        MouseActionConfiguration mouseActionConfiguration;
+        mouseActionConfiguration.mouseEvent = Mouse::EventType::RightButtonUp;
+        mouseActionConfiguration.cursorLocation = CursorLocation::CloseButton;
+        mouseActionConfiguration.actionType = ActionType::ToggleAlwaysOnTop;
+        mainConfig.hotMouseButtonServiceConfiguration.mouseActions.push_back(mouseActionConfiguration);
+    }
+    {
+        MouseActionConfiguration mouseActionConfiguration;
+        mouseActionConfiguration.mouseEvent = Mouse::EventType::WheelUp;
+        mouseActionConfiguration.cursorLocation = CursorLocation::TitleBar;
+        mouseActionConfiguration.actionType = ActionType::SetAlwaysOnTop;
+        mainConfig.hotMouseButtonServiceConfiguration.mouseActions.push_back(mouseActionConfiguration);
+    }
+    {
+        MouseActionConfiguration mouseActionConfiguration;
+        mouseActionConfiguration.mouseEvent = Mouse::EventType::WheelDown;
+        mouseActionConfiguration.cursorLocation = CursorLocation::TitleBar;
+        mouseActionConfiguration.actionType = ActionType::UnsetAlwaysOnTop;
+        mainConfig.hotMouseButtonServiceConfiguration.mouseActions.push_back(mouseActionConfiguration);
+    }
+    {
+        MouseActionConfiguration mouseActionConfiguration;
+        mouseActionConfiguration.mouseEvent = Mouse::EventType::WheelUp;
+        mouseActionConfiguration.cursorLocation = CursorLocation::TitleBar;
+        mouseActionConfiguration.actionType = ActionType::DecreaseTransparency;
+        mouseActionConfiguration.actionArgs.push_back("10");
+        mouseActionConfiguration.modifierKeys.push_back(VK_LMENU);
+        mainConfig.hotMouseButtonServiceConfiguration.mouseActions.push_back(mouseActionConfiguration);
+    }
+    {
+        MouseActionConfiguration mouseActionConfiguration;
+        mouseActionConfiguration.mouseEvent = Mouse::EventType::WheelDown;
+        mouseActionConfiguration.cursorLocation = CursorLocation::TitleBar;
+        mouseActionConfiguration.actionType = ActionType::IncreaseTransparency;
+        mouseActionConfiguration.actionArgs.push_back("10");
+        mouseActionConfiguration.modifierKeys.push_back(VK_LMENU);
+        mainConfig.hotMouseButtonServiceConfiguration.mouseActions.push_back(mouseActionConfiguration);
+    }
+    return mainConfig;
 }
 
 BOOL CoolShellApp::InitInstance()
@@ -121,26 +121,26 @@ BOOL CoolShellApp::InitInstance()
     // create the main application window that holds the tray icon
     m_mainWindow.Create();
 
-	auto coolShellConfig = GetCoolShellConfiguration();
+    auto coolShellConfig = GetCoolShellConfiguration();
 
-	m_mouseEventDispatcher = std::make_shared<MouseEventDispatcher>();
+    m_mouseEventDispatcher = std::make_shared<MouseEventDispatcher>();
 
     m_windowTitleBarService = std::make_shared<WindowTitleBarService>(m_mouseEventDispatcher);
-	m_windowTitleBarService->Initialize(coolShellConfig.hotMouseButtonServiceConfiguration);
+    m_windowTitleBarService->Initialize(coolShellConfig.hotMouseButtonServiceConfiguration);
 
-	m_wheelUnderCursorService = std::make_shared<WheelUnderCursorService>(m_mouseEventDispatcher);
-	m_wheelUnderCursorService->Initialize(coolShellConfig.wheelUnderCursorServiceConfiguration);
+    m_wheelUnderCursorService = std::make_shared<WheelUnderCursorService>(m_mouseEventDispatcher);
+    m_wheelUnderCursorService->Initialize(coolShellConfig.wheelUnderCursorServiceConfiguration);
 
     m_dragWindowService = std::make_shared<DragWindowModule>();
     m_dragWindowService->Setup(*m_mouseEventDispatcher);
 
-	m_mediaRemoteService = std::make_shared<MediaRemoteService>(m_mouseEventDispatcher);
-	m_mediaRemoteService->Initialize(coolShellConfig.mediaRemoteServiceConfiguration);
+    m_mediaRemoteService = std::make_shared<MediaRemoteService>(m_mouseEventDispatcher);
+    m_mediaRemoteService->Initialize(coolShellConfig.mediaRemoteServiceConfiguration);
 
-	LowLevelMouseMonitor::Instance().GetEvent().connect(std::bind(&MouseEventDispatcher::OnLowLevelMouseEvent, std::ref(*m_mouseEventDispatcher), std::placeholders::_1));
+    LowLevelMouseMonitor::Instance().GetEvent().connect(std::bind(&MouseEventDispatcher::OnLowLevelMouseEvent, std::ref(*m_mouseEventDispatcher), std::placeholders::_1));
     LowLevelMouseMonitor::Instance().Install();
     LOG_INFO(_T("LowLevelMouseMonitor installed"));
-	
+    
     return TRUE;
 }
 

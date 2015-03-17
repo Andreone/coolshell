@@ -21,8 +21,8 @@
 
 MouseEventDispatcher::MouseEventDispatcher() :
     IMouseEventDispatcher(),
-	m_mouseEvent(),
-	m_LButtonDownEvent(),
+    m_mouseEvent(),
+    m_LButtonDownEvent(),
     m_LButtonUpEvent(),
     m_RButtonDownEvent(),
     m_RButtonUpEvent(),
@@ -47,17 +47,17 @@ void MouseEventDispatcher::OnLowLevelMouseEvent(WindowsHooks::LowLevelMouseEvent
                 args.IsInjected() ? _T("yes") : _T("no"));
         }
 
-		//if (!args.IsInjected())
-		//{
-		//	LOG_WARN("Ignored injected event");
-		//	return;
-		//}
+        //if (!args.IsInjected())
+        //{
+        //	LOG_WARN("Ignored injected event");
+        //	return;
+        //}
 
-		m_mouseEvent(args);
-		if (args.IsHandled())
-			return;
+        m_mouseEvent(args);
+        if (args.IsHandled())
+            return;
 
-		Dispatch(args);
+        Dispatch(args);
     }
     catch (std::exception& e)
     {
@@ -68,54 +68,54 @@ void MouseEventDispatcher::OnLowLevelMouseEvent(WindowsHooks::LowLevelMouseEvent
 
 void MouseEventDispatcher::Dispatch(WindowsHooks::LowLevelMouseEventArgs& args)
 {
-	switch (args.GetMessage())
-	{
-	case WM_LBUTTONDOWN:
-		if (!args.IsInjected())
-			m_LButtonDownEvent(args);
-		break;
-	case WM_LBUTTONUP:
-		if (!args.IsInjected())
-			m_LButtonUpEvent(args);
-		break;
-	case WM_RBUTTONDOWN:
-		if (!args.IsInjected())
-			m_RButtonDownEvent(args);
-		break;
-	case WM_RBUTTONUP:
-		if (!args.IsInjected())
-			m_RButtonUpEvent(args);
-		break;
-	case WM_MBUTTONDOWN:
-		if (!args.IsInjected())
-			m_MButtonDownEvent(args);
-		break;
-	case WM_MBUTTONUP:
-		if (!args.IsInjected())
-			m_MButtonUpEvent(args);
-		break;
-	case WM_XBUTTONDOWN:
-		m_XButtonDownEvent(args);
-		break;
-	case WM_XBUTTONUP:
-		m_XButtonUpEvent(args);
-		break;
-	case WM_MOUSEWHEEL:
-		if (!args.IsInjected())
-			m_WheelEvent(args);
-		break;
+    switch (args.GetMessage())
+    {
+    case WM_LBUTTONDOWN:
+        if (!args.IsInjected())
+            m_LButtonDownEvent(args);
+        break;
+    case WM_LBUTTONUP:
+        if (!args.IsInjected())
+            m_LButtonUpEvent(args);
+        break;
+    case WM_RBUTTONDOWN:
+        if (!args.IsInjected())
+            m_RButtonDownEvent(args);
+        break;
+    case WM_RBUTTONUP:
+        if (!args.IsInjected())
+            m_RButtonUpEvent(args);
+        break;
+    case WM_MBUTTONDOWN:
+        if (!args.IsInjected())
+            m_MButtonDownEvent(args);
+        break;
+    case WM_MBUTTONUP:
+        if (!args.IsInjected())
+            m_MButtonUpEvent(args);
+        break;
+    case WM_XBUTTONDOWN:
+        m_XButtonDownEvent(args);
+        break;
+    case WM_XBUTTONUP:
+        m_XButtonUpEvent(args);
+        break;
+    case WM_MOUSEWHEEL:
+        if (!args.IsInjected())
+            m_WheelEvent(args);
+        break;
 //#if _WIN32_WINNT >= _WIN32_WINNT_VISTA
-	case WM_MOUSEHWHEEL:
-		if (!args.IsInjected())
-			m_HWheelEvent(args);
-		break;
+    case WM_MOUSEHWHEEL:
+        if (!args.IsInjected())
+            m_HWheelEvent(args);
+        break;
 //#endif
-	case WM_MOUSEMOVE:
-		if (!args.IsInjected())
-			m_MouseMoveEvent(args);
-		break;
-	default:
-		break;
-	}
+    case WM_MOUSEMOVE:
+        if (!args.IsInjected())
+            m_MouseMoveEvent(args);
+        break;
+    default:
+        break;
+    }
 
 }

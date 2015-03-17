@@ -21,7 +21,7 @@
 #include <functional>
 
 class ClickManager : protected ClickAlgo,
-					 protected boost::noncopyable
+                     protected boost::noncopyable
 {
 public:
     typedef std::function<void ()> ClickDelegate;

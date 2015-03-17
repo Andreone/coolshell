@@ -24,15 +24,15 @@ struct WheelUnderCursorServiceConfiguration;
 class WheelUnderCursorService : public boost::noncopyable
 {
 public:
-	WheelUnderCursorService(std::shared_ptr<IMouseEventDispatcher> mouseEventDispatcher);
-	virtual ~WheelUnderCursorService() { }
+    WheelUnderCursorService(std::shared_ptr<IMouseEventDispatcher> mouseEventDispatcher);
+    virtual ~WheelUnderCursorService() { }
 
     void Initialize(const WheelUnderCursorServiceConfiguration& configuration);
 
 private:
     void OnWheel(WindowsHooks::LowLevelMouseEventArgs& args);
-	bool IsWindowClassExcluded(const CString& s) const;
-		
-	std::shared_ptr<IMouseEventDispatcher> m_mouseEventDispatcher;
-	std::list<CString> m_excludedWndClasses;
+    bool IsWindowClassExcluded(const CString& s) const;
+        
+    std::shared_ptr<IMouseEventDispatcher> m_mouseEventDispatcher;
+    std::list<CString> m_excludedWndClasses;
 };

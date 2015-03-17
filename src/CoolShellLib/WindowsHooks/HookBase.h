@@ -35,7 +35,7 @@ private:
     static TMonitor* m_pInstance;
 
 public:
-	typedef boost::signals2::signal<void (TEventArgs&)> HookEvent;
+    typedef boost::signals2::signal<void (TEventArgs&)> HookEvent;
     static TMonitor& Instance()
     {
         if(!m_pInstance)

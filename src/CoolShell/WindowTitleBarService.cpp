@@ -27,7 +27,7 @@
 #include "WindowRoller.h"
 
 WindowTitleBarService::WindowTitleBarService(std::shared_ptr<IMouseEventDispatcher> mouseEventDispatcher) :
-	m_mouseEventDispatcher(mouseEventDispatcher),
+    m_mouseEventDispatcher(mouseEventDispatcher),
     m_actions()
 { 
 }
@@ -39,10 +39,10 @@ void WindowTitleBarService::RegisterAction( UINT area, UINT mouseEvent, MouseAct
 
 void WindowTitleBarService::Initialize(const WindowTitleBarServiceConfiguration& configuration)
 {
-	if(!configuration.enabled)
-		return;
+    if(!configuration.enabled)
+        return;
 
-	m_mouseEventDispatcher->WheelEvent().connect(boost::bind(&WindowTitleBarService::OnMouseEvent, this, _1));
+    m_mouseEventDispatcher->WheelEvent().connect(boost::bind(&WindowTitleBarService::OnMouseEvent, this, _1));
     m_mouseEventDispatcher->MButtonUpEvent().connect(boost::bind(&WindowTitleBarService::OnMouseEvent, this, _1));
     m_mouseEventDispatcher->RButtonUpEvent().connect(boost::bind(&WindowTitleBarService::OnMouseEvent, this, _1));
     m_mouseEventDispatcher->RButtonDownEvent().connect(boost::bind(&WindowTitleBarService::OnMouseEvent, this, _1));
