@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  Visual Leak Detector - VisualLeakDetector Class Definition
-//  Copyright (c) 2005-2013 VLD Team
+//  Copyright (c) 2005-2014 VLD Team
 //
 //  This library is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU Lesser General Public
@@ -30,14 +30,20 @@
 #endif
 
 #include <cstdio>
+#pragma push_macro("new")
+#undef new
+#include <string>
+#include <memory>
+#pragma pop_macro("new")
 #include <windows.h>
 #include "vld_def.h"
 #include "version.h"
-#include "callstack.h" // Provides a custom class for handling call stacks.
-#include "map.h"       // Provides a custom STL-like map template.
-#include "ntapi.h"     // Provides access to NT APIs.
-#include "set.h"       // Provides a custom STL-like set template.
-#include "utility.h"   // Provides miscellaneous utility functions.
+#include "callstack.h"  // Provides a custom class for handling call stacks.
+#include "map.h"        // Provides a custom STL-like map template.
+#include "ntapi.h"      // Provides access to NT APIs.
+#include "set.h"        // Provides a custom STL-like set template.
+#include "utility.h"    // Provides miscellaneous utility functions.
+#include "vldallocator.h"   // Provides internal allocator.
 
 #define MAXMODULELISTLENGTH 512     // Maximum module list length, in characters.
 #define SELFTESTTEXTA       "Memory Leak Self-Test"
@@ -56,6 +62,10 @@ extern "C" __declspec(dllexport) void VLDRestore ();
 
 // Function pointer types for explicit dynamic linking with functions listed in
 // the import patch table.
+typedef HANDLE(__stdcall *GetProcessHeap_t) ();
+typedef HANDLE(__stdcall *HeapCreate_t) (DWORD, SIZE_T, SIZE_T);
+typedef FARPROC(__stdcall *GetProcAddress_t) (HMODULE, LPCSTR);
+
 typedef void* (__cdecl *_calloc_dbg_t) (size_t, size_t, int, const char*, int);
 typedef void* (__cdecl *_malloc_dbg_t) (size_t, int, const char *, int);
 typedef void* (__cdecl *_realloc_dbg_t) (void *, size_t, int, const char *, int);
@@ -92,7 +102,8 @@ typedef void* (__cdecl *_aligned_offset_recalloc_dbg_t) (void *, size_t, size_t,
 // a BlockMap which maps each of these structures to its corresponding memory
 // block.
 struct blockinfo_t {
-    CallStack *callStack;
+    std::unique_ptr<CallStack> callStack;
+    DWORD      threadId;
     SIZE_T     serialNumber;
     SIZE_T     size;
     bool       reported;
@@ -108,10 +119,12 @@ struct heapinfo_t {
     BlockMap blockMap;   // Map of all blocks allocated from this heap.
     UINT32   flags;      // Heap status flags:
 #define VLD_HEAP_CRT_DBG 0x1 //   If set, this heap is a CRT heap (i.e. the CRT uses it for new/malloc).
+#define VLD_HEAP_CRT_UNKNOWN 0x2 //   If set, this heap is a unknown CRT heap.
 };
 
 // HeapMaps map heaps (via their handles) to BlockMaps.
 typedef Map<HANDLE, heapinfo_t*> HeapMap;
+typedef std::basic_string<wchar_t, std::char_traits<wchar_t>, vldallocator<wchar_t> > vldstring;
 
 // This structure stores information, primarily the virtual address range, about
 // a given module and can be used with the Set template because it supports the
@@ -132,8 +145,8 @@ struct moduleinfo_t {
     UINT32 flags;                    // Module flags:
 #define VLD_MODULE_EXCLUDED      0x1 //   If set, this module is excluded from leak detection.
 #define VLD_MODULE_SYMBOLSLOADED 0x2 //   If set, this module's debug symbols have been loaded.
-    LPCWSTR name;                    // The module's name (e.g. "kernel32.dll").
-    LPCWSTR path;                    // The fully qualified path from where the module was loaded.
+    vldstring name;                  // The module's name (e.g. "kernel32.dll").
+    vldstring path;                  // The fully qualified path from where the module was loaded.
 };
 
 // ModuleSets store information about modules loaded in the process.
@@ -154,7 +167,7 @@ struct tls_t {
     UINT32	    oldFlags;         // Thread-local status old flags
     BOOL	    blockProcessed;   // Internal diagnostic feature
     DWORD 	    threadId;         // Thread ID of the thread that owns this TLS structure.
-    CallStack** ppCallStack; 	  // Memory block callstack pointer.
+    blockinfo_t* pblockInfo; 	  // Store pointer to callstack.
 };
 
 // The TlsSet allows VLD to keep track of all thread local storage structures
@@ -257,8 +270,11 @@ public:
 
     VOID RefreshModules();
     SIZE_T GetLeaksCount();
+    SIZE_T GetThreadLeaksCount(DWORD threadId);
     SIZE_T ReportLeaks();
+    SIZE_T ReportThreadLeaks(DWORD threadId);
     VOID MarkAllLeaksAsReported();
+    VOID MarkThreadLeaksAsReported(DWORD threadId);
     VOID EnableModule(HMODULE module);
     VOID DisableModule(HMODULE module);
     UINT32 GetOptions();
@@ -280,20 +296,21 @@ private:
     // Private leak detection functions - see each function definition for details.
     ////////////////////////////////////////////////////////////////////////////////
     VOID   attachToLoadedModules (ModuleSet *newmodules);
-    LPWSTR buildSymbolSearchPath ();
+    UINT32 getModuleState(ModuleSet::Iterator& it, UINT32 &moduleFlags);
+    LPWSTR buildSymbolSearchPath();
     VOID   configure ();
     BOOL   enabled ();
     SIZE_T eraseDuplicates (const BlockMap::Iterator &element, Set<blockinfo_t*> &aggregatedLeak);
     tls_t* getTls ();
-    VOID   mapBlock (HANDLE heap, LPCVOID mem, SIZE_T size, bool crtalloc, CallStack **&ppcallstack);
+    VOID   mapBlock (HANDLE heap, LPCVOID mem, SIZE_T size, bool crtalloc, DWORD threadId, blockinfo_t* &pblockInfo, UINT_PTR ra);
     VOID   mapHeap (HANDLE heap);
     VOID   remapBlock (HANDLE heap, LPCVOID mem, LPCVOID newmem, SIZE_T size,
-        bool crtalloc, CallStack **&ppcallstack, const context_t &context);
+        bool crtalloc, DWORD threadId, blockinfo_t* &pblockInfo, const context_t &context);
     VOID   reportConfig ();
     SIZE_T reportHeapLeaks (HANDLE heap);
-    SIZE_T getLeaksCount (heapinfo_t* heapinfo);
-    SIZE_T reportLeaks( heapinfo_t* heapinfo, Set<blockinfo_t*> &aggregatedLeaks );
-    VOID   markAllLeaksAsReported (heapinfo_t* heapinfo);
+    SIZE_T getLeaksCount (heapinfo_t* heapinfo, DWORD threadId = (DWORD)-1);
+    SIZE_T reportLeaks(heapinfo_t* heapinfo, bool &firstLeak, Set<blockinfo_t*> &aggregatedLeaks, DWORD threadId = (DWORD)-1);
+    VOID   markAllLeaksAsReported (heapinfo_t* heapinfo, DWORD threadId = (DWORD)-1);
     VOID   unmapBlock (HANDLE heap, LPCVOID mem, const context_t &context);
     VOID   unmapHeap (HANDLE heap);
     void   resolveStacks(heapinfo_t* heapinfo);
@@ -305,7 +322,7 @@ private:
     // Utils
     static bool isModuleExcluded (UINT_PTR returnaddress);
     blockinfo_t* findAllocedBlock(LPCVOID, __out HANDLE& heap);
-    static void getCallStack( CallStack **&ppcallstack, context_t &context );
+    static void getCallStack( CallStack *&pcallstack, context_t &context );
     static inline void firstAllocCall(tls_t * tls);
     void setupReporting();
     void checkInternalMemoryLeaks();
@@ -319,7 +336,8 @@ private:
     // within this class's code. See crtmfcpatch.cpp for those functions.
     ////////////////////////////////////////////////////////////////////////////////
     // Win32 IAT replacement functions
-    static FARPROC  __stdcall _GetProcAddress (HMODULE module, LPCSTR procname);
+    static FARPROC  __stdcall _GetProcAddress(HMODULE module, LPCSTR procname);
+    static HANDLE   __stdcall _GetProcessHeap();
 
     static HANDLE   __stdcall _HeapCreate (DWORD options, SIZE_T initsize, SIZE_T maxsize);
     static BOOL     __stdcall _HeapDestroy (HANDLE heap);
@@ -351,7 +369,6 @@ private:
     SIZE_T               m_curAlloc;          // Total amount currently allocated.
     SIZE_T               m_maxAlloc;          // Largest ever allocated at once.
     ModuleSet           *m_loadedModules;     // Contains information about all modules loaded in the process.
-    CriticalSection      m_loaderLock;        // Serializes the attachment of newly loaded modules.
     CriticalSection      m_heapMapLock;       // Serializes access to the heap and block maps.
     SIZE_T               m_maxDataDump;       // Maximum number of user-data bytes to dump for each leaked block.
     UINT32               m_maxTraceFrames;    // Maximum number of frames per stack trace for each leaked block.
@@ -363,7 +380,7 @@ private:
     static patchentry_t  m_kernel32Patch [];
     static patchentry_t  m_ntdllPatch [];
     static patchentry_t  m_ole32Patch [];
-    static moduleentry_t m_patchTable [46];     // Table of imports patched for attaching VLD to other modules.
+    static moduleentry_t m_patchTable [50];   // Table of imports patched for attaching VLD to other modules.
     FILE                *m_reportFile;        // File where the memory leak report may be sent to.
     WCHAR                m_reportFilePath [MAX_PATH]; // Full path and name of file to send memory leak report to.
     const char          *m_selfTestFile;      // Filename where the memory leak self-test block is leaked.
@@ -378,10 +395,10 @@ private:
     TlsMap              *m_tlsMap;            // Set of all thread-local storage structures for the process.
     HMODULE              m_vldBase;           // Visual Leak Detector's own module handle (base address).
 
-    typedef FARPROC __stdcall _GetProcAddressType(HMODULE module, LPCSTR procname);
-
     VOID __stdcall ChangeModuleState(HMODULE module, bool on);
-    static _GetProcAddressType * m_original_GetProcAddress;
+    static GetProcAddress_t m_GetProcAddress;
+    static GetProcessHeap_t m_GetProcessHeap;
+    static HeapCreate_t m_HeapCreate;
 };
 
 

@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  Visual Leak Detector - Exported APIs
-//  Copyright (c) 2005-2013 VLD Team
+//  Copyright (c) 2005-2014 VLD Team
 //
 //  This library is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU Lesser General Public
@@ -67,14 +67,29 @@ __declspec(dllexport) UINT VLDReportLeaks ()
     return (UINT)g_vld.ReportLeaks();
 }
 
+__declspec(dllexport) UINT VLDReportThreadLeaks (UINT threadId)
+{
+    return (UINT)g_vld.ReportThreadLeaks(threadId);
+}
+
 __declspec(dllexport) UINT VLDGetLeaksCount ()
 {
     return (UINT)g_vld.GetLeaksCount();
 }
 
+__declspec(dllexport) UINT VLDGetThreadLeaksCount (UINT threadId)
+{
+    return (UINT)g_vld.GetThreadLeaksCount(threadId);
+}
+
 __declspec(dllexport) void VLDMarkAllLeaksAsReported ()
 {
     g_vld.MarkAllLeaksAsReported();
+}
+
+__declspec(dllexport) void VLDMarkThreadLeaksAsReported (UINT threadId)
+{
+    g_vld.MarkThreadLeaksAsReported(threadId);
 }
 
 __declspec(dllexport) void VLDRefreshModules()

@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  Visual Leak Detector - VisualLeakDetector Class Implementation
-//  Copyright (c) 2005-2013 VLD Team
+//  Copyright (c) 2005-2014 VLD Team
 //
 //  This library is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU Lesser General Public
@@ -42,14 +42,18 @@ extern CriticalSection  g_symbolLock;
 
 void VisualLeakDetector::firstAllocCall(tls_t * tls)
 {
-    if (tls->ppCallStack)
+    if (tls->pblockInfo)
     {
         tls->flags &= ~VLD_TLS_CRTALLOC;
-        getCallStack(tls->ppCallStack, tls->context);
+        CallStack* callstack;
+        getCallStack(callstack, tls->context);
+        tls->pblockInfo->callStack.reset(callstack);
+        tls->pblockInfo = NULL;
     }
 
     // Reset thread local flags and variables for the next allocation.
     tls->context.fp = 0x0;
+    tls->context.func = 0x0;
     tls->flags &= ~VLD_TLS_CRTALLOC;
 }
 
@@ -1382,6 +1386,71 @@ void* VisualLeakDetector::__recalloc_dbg (_recalloc_dbg_t  p_recalloc_dbg,
     return block;
 }
 
+// GetProcessHeap - Calls to GetProcessHeap are patched through to this function. This
+//   function is just a wrapper around the real GetProcessHeap.
+//
+//  Return Value:
+//
+//    Returns the value returned by GetProcessHeap.
+//
+HANDLE VisualLeakDetector::_GetProcessHeap()
+{
+    // Get the return address within the calling function.
+    UINT_PTR ra = (UINT_PTR) _ReturnAddress();
+
+    // Get the process heap.
+    HANDLE heap = m_GetProcessHeap();
+
+    // Try to get the name of the function containing the return address.
+    BYTE symbolbuffer[sizeof(SYMBOL_INFO) +MAX_SYMBOL_NAME_SIZE] = { 0 };
+    SYMBOL_INFO *functioninfo = (SYMBOL_INFO*) &symbolbuffer;
+    functioninfo->SizeOfStruct = sizeof(SYMBOL_INFO);
+    functioninfo->MaxNameLen = MAX_SYMBOL_NAME_LENGTH;
+
+    g_symbolLock.Enter();
+    DWORD64 displacement;
+    DbgTrace(L"dbghelp32.dll %i: SymFromAddrW\n", GetCurrentThreadId());
+    VLDDisable();
+    BOOL symfound = SymFromAddrW(g_currentProcess, ra, &displacement, functioninfo);
+    VLDRestore();
+    g_symbolLock.Leave();
+    if (symfound == TRUE) {
+        if (wcscmp(L"_heap_init", functioninfo->Name) == 0) {
+            // GetProcessHeap was called by _heap_init (VS2012 and upper). This is a static CRT heap (msvcr*.dll).
+            CriticalSectionLocker cs(g_vld.m_heapMapLock);
+            HeapMap::Iterator heapit = g_vld.m_heapMap->find(heap);
+            if (heapit == g_vld.m_heapMap->end())
+            {
+                g_vld.mapHeap(heap);
+                heapit = g_vld.m_heapMap->find(heap);
+            }
+            HMODULE hCallingModule = (HMODULE) functioninfo->ModBase;
+            if (hCallingModule)
+            {
+                HMODULE hCurrentModule = GetModuleHandleW(NULL);
+                if (hCallingModule != hCurrentModule)
+                {
+                    // CRT dynamic linking
+                    WCHAR callingmodulename[MAX_PATH] = L"";
+                    if (GetModuleFileName(hCallingModule, callingmodulename, _countof(callingmodulename)) > 0)
+                    {
+                        _wcslwr_s(callingmodulename);
+                        if (wcsstr(callingmodulename, L"d.dll") != 0) // debug runtime
+                            (*heapit).second->flags = VLD_HEAP_CRT_DBG;
+                    }
+                }
+                else
+                {
+                    // CRT static linking
+                    (*heapit).second->flags = VLD_HEAP_CRT_UNKNOWN;
+                }
+            }
+        }
+    }
+
+    return heap;
+}
+
 // _HeapCreate - Calls to HeapCreate are patched through to this function. This
 //   function is just a wrapper around the real HeapCreate that calls VLD's heap
 //   creation tracking function after the heap has been created.
@@ -1402,7 +1471,7 @@ HANDLE VisualLeakDetector::_HeapCreate (DWORD options, SIZE_T initsize, SIZE_T m
     UINT_PTR ra = (UINT_PTR)_ReturnAddress();
 
     // Create the heap.
-    HANDLE heap = HeapCreate(options, initsize, maxsize);
+    HANDLE heap = m_HeapCreate(options, initsize, maxsize);
 
     // Map the created heap handle to a new block map.
     g_vld.mapHeap(heap);
@@ -1416,11 +1485,13 @@ HANDLE VisualLeakDetector::_HeapCreate (DWORD options, SIZE_T initsize, SIZE_T m
     g_symbolLock.Enter();
     DWORD64 displacement;
     DbgTrace(L"dbghelp32.dll %i: SymFromAddrW\n", GetCurrentThreadId());
+    VLDDisable();
     BOOL symfound = SymFromAddrW(g_currentProcess, ra, &displacement, functioninfo);
+    VLDRestore();
     g_symbolLock.Leave();
     if (symfound == TRUE) {
         if (wcscmp(L"_heap_init", functioninfo->Name) == 0) {
-            // HeapCreate was called by _heap_init. This is a static CRT heap (msvcr*.dll).
+            // HeapCreate was called by _heap_init (VS2010 and before). This is a static CRT heap (msvcr*.dll).
             CriticalSectionLocker cs(g_vld.m_heapMapLock);
             HeapMap::Iterator heapit = g_vld.m_heapMap->find(heap);
             assert(heapit != g_vld.m_heapMap->end());
@@ -1428,16 +1499,7 @@ HANDLE VisualLeakDetector::_HeapCreate (DWORD options, SIZE_T initsize, SIZE_T m
             if (hCallingModule)
             {
                 HMODULE hCurrentModule = GetModuleHandleW(NULL);
-                if (hCallingModule == hCurrentModule)
-                {
-                    // CRT static linking
-                    if (!(g_vld.m_options & VLD_OPT_RELEASE_CRT_RUNTIME))
-                    {
-                        // debug runtime
-                        (*heapit).second->flags |= VLD_HEAP_CRT_DBG;
-                    }
-                }
-                else
+                if (hCallingModule != hCurrentModule)
                 {
                     // CRT dynamic linking
                     WCHAR callingmodulename [MAX_PATH] = L"";
@@ -1445,8 +1507,13 @@ HANDLE VisualLeakDetector::_HeapCreate (DWORD options, SIZE_T initsize, SIZE_T m
                     {
                         _wcslwr_s(callingmodulename);
                         if (wcsstr(callingmodulename, L"d.dll") != 0) // debug runtime
-                            (*heapit).second->flags |= VLD_HEAP_CRT_DBG;
+                            (*heapit).second->flags = VLD_HEAP_CRT_DBG;
                     }
+                }
+                else
+                {
+                    // CRT static linking
+                    (*heapit).second->flags = VLD_HEAP_CRT_UNKNOWN;
                 }
             }
         }
@@ -1510,7 +1577,7 @@ LPVOID VisualLeakDetector::_RtlAllocateHeap (HANDLE heap, DWORD flags, SIZE_T si
     if (firstcall) {
         // This is the first call to enter VLD for the current allocation.
         // Record the current frame pointer.
-        CAPTURE_CONTEXT(context);
+        CAPTURE_CONTEXT(context, RtlAllocateHeap);
     }
     else
         context = tls->context;
@@ -1522,7 +1589,7 @@ LPVOID VisualLeakDetector::_RtlAllocateHeap (HANDLE heap, DWORD flags, SIZE_T si
         // Begin the stack trace with the current frame. Obtain the current
         // frame pointer.
         firstcall = true;
-        CAPTURE_CONTEXT(context);
+        CAPTURE_CONTEXT(context, RtlAllocateHeap);
     }
 
     tls->context = context;
@@ -1551,7 +1618,7 @@ LPVOID VisualLeakDetector::_HeapAlloc (HANDLE heap, DWORD flags, SIZE_T size)
     if (firstcall) {
         // This is the first call to enter VLD for the current allocation.
         // Record the current frame pointer.
-        CAPTURE_CONTEXT(context);
+        CAPTURE_CONTEXT(context, HeapAlloc);
     }
     else
         context = tls->context;
@@ -1563,7 +1630,7 @@ LPVOID VisualLeakDetector::_HeapAlloc (HANDLE heap, DWORD flags, SIZE_T size)
         // Begin the stack trace with the current frame. Obtain the current
         // frame pointer.
         firstcall = true;
-        CAPTURE_CONTEXT(context);
+        CAPTURE_CONTEXT(context, HeapAlloc);
     }
 
     tls->context = context;
@@ -1582,7 +1649,7 @@ void VisualLeakDetector::AllocateHeap (tls_t* tls, HANDLE heap, LPVOID block, SI
 
     // The module that initiated this allocation is included in leak
     // detection. Map this block to the specified heap.
-    g_vld.mapBlock(heap, block, size, crtalloc, tls->ppCallStack);
+    g_vld.mapBlock(heap, block, size, crtalloc, tls->threadId, tls->pblockInfo, tls->context.fp[1]);
 }
 
 // _RtlFreeHeap - Calls to RtlFreeHeap are patched through to this function.
@@ -1608,7 +1675,7 @@ BYTE VisualLeakDetector::_RtlFreeHeap (HANDLE heap, DWORD flags, LPVOID mem)
     {
         context_t context;
         // Record the current frame pointer.
-        CAPTURE_CONTEXT(context);
+        CAPTURE_CONTEXT(context, RtlFreeHeap);
 
         // Unmap the block from the specified heap.
         g_vld.unmapBlock(heap, mem, context);
@@ -1628,7 +1695,7 @@ BOOL VisualLeakDetector::_HeapFree (HANDLE heap, DWORD flags, LPVOID mem)
     {
         context_t context;
         // Record the current frame pointer.
-        CAPTURE_CONTEXT(context);
+        CAPTURE_CONTEXT(context, HeapFree);
 
         // Unmap the block from the specified heap.
         g_vld.unmapBlock(heap, mem, context);
@@ -1675,7 +1742,7 @@ LPVOID VisualLeakDetector::_RtlReAllocateHeap (HANDLE heap, DWORD flags, LPVOID 
     if (firstcall) {
         // This is the first call to enter VLD for the current allocation.
         // Record the current frame pointer.
-        CAPTURE_CONTEXT(context);
+        CAPTURE_CONTEXT(context, RtlReAllocateHeap);
     }
     else
         context = tls->context;
@@ -1687,7 +1754,7 @@ LPVOID VisualLeakDetector::_RtlReAllocateHeap (HANDLE heap, DWORD flags, LPVOID 
         // Begin the stack trace with the current frame. Obtain the current
         // frame pointer.
         firstcall = true;
-        CAPTURE_CONTEXT(context);
+        CAPTURE_CONTEXT(context, RtlReAllocateHeap);
     }
 
     ReAllocateHeap(tls, heap, mem, newmem, size, context);
@@ -1695,7 +1762,7 @@ LPVOID VisualLeakDetector::_RtlReAllocateHeap (HANDLE heap, DWORD flags, LPVOID 
     if (firstcall)
     {
         firstAllocCall(tls);
-        tls->ppCallStack = NULL;
+        tls->pblockInfo = NULL;
     }
 
     return newmem;
@@ -1718,7 +1785,7 @@ LPVOID VisualLeakDetector::_HeapReAlloc (HANDLE heap, DWORD flags, LPVOID mem, S
     if (firstcall) {
         // This is the first call to enter VLD for the current allocation.
         // Record the current frame pointer.
-        CAPTURE_CONTEXT(context);
+        CAPTURE_CONTEXT(context, HeapReAlloc);
     }
     else
         context = tls->context;
@@ -1730,7 +1797,7 @@ LPVOID VisualLeakDetector::_HeapReAlloc (HANDLE heap, DWORD flags, LPVOID mem, S
         // Begin the stack trace with the current frame. Obtain the current
         // frame pointer.
         firstcall = true;
-        CAPTURE_CONTEXT(context);
+        CAPTURE_CONTEXT(context, HeapReAlloc);
     }
 
     ReAllocateHeap(tls, heap, mem, newmem, size, context);
@@ -1738,7 +1805,7 @@ LPVOID VisualLeakDetector::_HeapReAlloc (HANDLE heap, DWORD flags, LPVOID mem, S
     if (firstcall)
     {
         firstAllocCall(tls);
-        tls->ppCallStack = NULL;
+        tls->pblockInfo = NULL;
     }
 
     return newmem;
@@ -1751,11 +1818,12 @@ void VisualLeakDetector::ReAllocateHeap (tls_t *tls, HANDLE heap, LPVOID mem, LP
     // Reset thread local flags and variables, in case any libraries called
     // into while remapping the block allocate some memory.
     tls->context.fp = 0x0;
+    tls->context.func = 0x0;
     tls->flags &= ~VLD_TLS_CRTALLOC;
 
     // The module that initiated this allocation is included in leak
     // detection. Remap the block.
-    g_vld.remapBlock(heap, mem, newmem, size, crtalloc, tls->ppCallStack, context);
+    g_vld.remapBlock(heap, mem, newmem, size, crtalloc, tls->threadId, tls->pblockInfo, context);
 
 #ifdef _DEBUG
     if(tls->context.fp != 0)
@@ -1843,20 +1911,20 @@ LPVOID VisualLeakDetector::_CoTaskMemAlloc (SIZE_T size)
     HMODULE  ole32;
     tls_t   *tls = g_vld.getTls();
 
-    bool firstcall = (tls->context.fp == 0x0);
-    if (firstcall) {
-        // This is the first call to enter VLD for the current allocation.
-        // Record the current frame pointer.
-        CAPTURE_CONTEXT(context);
-        tls->context = context;
-        tls->blockProcessed = FALSE;
-    }
-
     if (pCoTaskMemAlloc == NULL) {
         // This is the first call to this function. Link to the real
         // CoTaskMemAlloc.
         ole32 = GetModuleHandleW(L"ole32.dll");
         pCoTaskMemAlloc = (CoTaskMemAlloc_t)g_vld._RGetProcAddress(ole32, "CoTaskMemAlloc");
+    }
+
+    bool firstcall = (tls->context.fp == 0x0);
+    if (firstcall) {
+        // This is the first call to enter VLD for the current allocation.
+        // Record the current frame pointer.
+        CAPTURE_CONTEXT(context, pCoTaskMemAlloc);
+        tls->context = context;
+        tls->blockProcessed = FALSE;
     }
 
     // Do the allocation. The block will be mapped by _RtlAllocateHeap.
@@ -1890,20 +1958,20 @@ LPVOID VisualLeakDetector::_CoTaskMemRealloc (LPVOID mem, SIZE_T size)
     HMODULE  ole32;
     tls_t   *tls = g_vld.getTls();
 
-    bool firstcall = (tls->context.fp == 0x0);
-    if (firstcall) {
-        // This is the first call to enter VLD for the current allocation.
-        // Record the current frame pointer.
-        CAPTURE_CONTEXT(context);
-        tls->context = context;
-        tls->blockProcessed = FALSE;
-    }
-
     if (pCoTaskMemRealloc == NULL) {
         // This is the first call to this function. Link to the real
         // CoTaskMemRealloc.
         ole32 = GetModuleHandleW(L"ole32.dll");
         pCoTaskMemRealloc = (CoTaskMemRealloc_t)g_vld._RGetProcAddress(ole32, "CoTaskMemRealloc");
+    }
+
+    bool firstcall = (tls->context.fp == 0x0);
+    if (firstcall) {
+        // This is the first call to enter VLD for the current allocation.
+        // Record the current frame pointer.
+        CAPTURE_CONTEXT(context, pCoTaskMemRealloc);
+        tls->context = context;
+        tls->blockProcessed = FALSE;
     }
 
     // Do the allocation. The block will be mapped by _RtlReAllocateHeap.
@@ -1955,7 +2023,7 @@ LPVOID VisualLeakDetector::Alloc (SIZE_T size)
     if (firstcall) {
         // This is the first call to enter VLD for the current allocation.
         // Record the current frame pointer.
-        CAPTURE_CONTEXT(context);
+        CAPTURE_CONTEXT(context, NULL);
         tls->context = context;
         tls->blockProcessed = FALSE;
     }
@@ -2074,7 +2142,7 @@ LPVOID VisualLeakDetector::Realloc (LPVOID mem, SIZE_T size)
     if (firstcall) {
         // This is the first call to enter VLD for the current allocation.
         // Record the current frame pointer.
-        CAPTURE_CONTEXT(context);
+        CAPTURE_CONTEXT(context, NULL);
         tls->context = context;
         tls->blockProcessed = FALSE;
     }

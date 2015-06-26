@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  Visual Leak Detector - Various Utility Functions
-//  Copyright (c) 2005-2013 VLD Team
+//  Copyright (c) 2005-2014 VLD Team
 //
 //  This library is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU Lesser General Public
@@ -365,6 +365,28 @@ BOOL FindPatch (HMODULE importmodule, moduleentry_t *module)
 VOID InsertReportDelay ()
 {
     s_reportDelay = TRUE;
+}
+
+// ConvertModulePathToAscii - Convert module path to ascii encoding.
+void ConvertModulePathToAscii( LPCWSTR modulename, LPSTR * modulenamea )
+{
+	size_t length = ::WideCharToMultiByte(CP_ACP, 0, modulename, -1, 0, 0, 0, 0);
+	*modulenamea = new CHAR [length];
+
+	// wcstombs_s requires locale to be already set up correctly, but it might not be correct on vld init step. So use WideCharToMultiByte instead
+	CHAR defaultChar     = '?';
+	BOOL defaultCharUsed = FALSE;
+
+	int count = ::WideCharToMultiByte(CP_ACP, 0/*flags*/, modulename, (int)-1, *modulenamea, (int)length, &defaultChar, &defaultCharUsed);
+	assert(count != 0);
+	if ( defaultCharUsed )
+	{
+		::OutputDebugStringW(__FILEW__ L": " __FUNCTIONW__ L" - defaultChar was used while conversion from \"");
+		::OutputDebugStringW(modulename);
+		::OutputDebugStringW(L"\" to ANSI \"");
+		::OutputDebugStringA(*modulenamea);
+		::OutputDebugStringW(L"\". Result can be wrong.\n");
+	}
 }
 
 // IsModulePatched - Checks to see if any of the imports listed in the specified
