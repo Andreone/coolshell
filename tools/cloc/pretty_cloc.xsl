@@ -42,7 +42,7 @@
         <h2>CLOC results</h2>
         <h3>
           <ul>
-            <xsl:value-of select="results/header/n_files"/> files (<xsl:value-of select="results/header/n_lines"/> lines) processed in <xsl:value-of select="results/header/elapsed_seconds"/> second(s) (<xsl:value-of select="round(results/header/files_per_second)"/> files/s, <xsl:value-of select="round(results/header/lines_per_second)"/> lines/s)
+            <xsl:value-of select="results/header/n_files"/> files (<xsl:value-of select="results/header/n_lines"/> lines) processed in <xsl:value-of select="results/header/elapsed_seconds"/> (<xsl:value-of select="round(results/header/files_per_second)"/> files/s, <xsl:value-of select="round(results/header/lines_per_second)"/> lines/s)
           </ul>
         </h3>
         <ul>
@@ -122,3 +122,4 @@
     </html>
   </xsl:template>
 </xsl:stylesheet>
+
