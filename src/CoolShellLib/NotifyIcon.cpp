@@ -59,13 +59,11 @@ void NotifyIcon::SetNotifyIconVersion()
 //////////////////////////////////////////////////////////////////////////
 
 NotifyIcon::NotifyIcon() :
-    m_nID(0),
+    m_id(0),
     m_hOwnerWnd(NULL),
     m_hIcon(NULL),
     m_toolTip(),
-    m_hMenu(NULL),
-    m_menuItemSelectedEvent(),
-    m_notifyIconEvent()
+    m_notifyMouseEvent()
 {
     if(!s_notifyIconVersion.is_initialized())
         SetNotifyIconVersion();
@@ -91,7 +89,7 @@ NotifyIcon::~NotifyIcon()
 
 BOOL NotifyIcon::Create(HWND hWndParent, HICON hIcon, LPCTSTR szToolTip)
 {
-    if(m_nID)
+    if(m_id)
         throw std::logic_error("The NotifyIcon is already created");
 
     DECLARE_NOFIFYICONDATA(nid);
@@ -109,39 +107,37 @@ BOOL NotifyIcon::Create(HWND hWndParent, HICON hIcon, LPCTSTR szToolTip)
 
     if(!::Shell_NotifyIcon(NIM_ADD, &nid))
     {
-        TRACE(_T("Failed to add icon #%d\n"), m_nID);
+        TRACE(_T("Failed to add icon #%d\n"), m_id);
         return FALSE;
     }
 
     nid.uVersion = s_notifyIconVersion.get();
     if(!::Shell_NotifyIcon(NIM_SETVERSION, &nid))
-        TRACE(_T("NIM_SETVERSION failed for icon #%d\n"), m_nID);
+        TRACE(_T("NIM_SETVERSION failed for icon #%d\n"), m_id);
 
     m_hOwnerWnd = hWndParent;
-    m_nID = nid.uID;
+    m_id = nid.uID;
     m_hIcon = nid.hIcon;
     m_toolTip = nid.szTip;
 
-    TRACE(_T("Icon #%d added\n"), m_nID);
+    TRACE(_T("Icon #%d added\n"), m_id);
     return TRUE;
 }
 
 
-LRESULT NotifyIcon::WndProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
+BOOL NotifyIcon::WndProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     if (uMsg == NotifyIcon::WM_NOTIFYICON_MSG)
     {
         UINT notifyIconId = ((*s_notifyIconVersion > NOTIFYICON_VERSION) ? HIWORD(lParam) : static_cast<UINT>(wParam));
 
-        if (notifyIconId == m_nID)
+        if (notifyIconId == m_id)
         {
             UINT xAnchor = ((*s_notifyIconVersion > NOTIFYICON_VERSION) ? GET_X_LPARAM(lParam) : 0);
             UINT yAnchor = ((*s_notifyIconVersion > NOTIFYICON_VERSION) ? GET_Y_LPARAM(lParam) : 0);
-            UINT notifyIconMsg = ((*s_notifyIconVersion > NOTIFYICON_VERSION) ? LOWORD(lParam) : static_cast<UINT>(lParam));
+            UINT msg = ((*s_notifyIconVersion > NOTIFYICON_VERSION) ? LOWORD(lParam) : static_cast<UINT>(lParam));
 
-            TRACE(_T("WM_NOTIFYICON_MSG: %d received for icon #%d\n"), notifyIconMsg, notifyIconId);
-
-            HandleWindowsMsg(notifyIconMsg, xAnchor, yAnchor);
+            m_notifyMouseEvent(*this, msg, xAnchor, yAnchor);
             return TRUE;
         }
     }
@@ -160,9 +156,9 @@ LRESULT NotifyIcon::WndProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 void NotifyIcon::Recreate() const
 {
-    ASSERT(m_nID);
+    ASSERT(m_id);
 
-    DECLARE_NOFIFYICONDATA_2(nid, m_nID, m_hOwnerWnd);
+    DECLARE_NOFIFYICONDATA_2(nid, m_id, m_hOwnerWnd);
     nid.hIcon = m_hIcon;
     nid.uCallbackMessage = WM_NOTIFYICON_MSG;
     nid.uFlags = NIF_ICON | NIF_MESSAGE;
@@ -173,9 +169,9 @@ void NotifyIcon::Recreate() const
     }
 
     if(::Shell_NotifyIcon(NIM_ADD, &nid))
-        TRACE(_T("Icon #%d recreated\n"), m_nID);
+        TRACE(_T("Icon #%d recreated\n"), m_id);
     else
-        TRACE(_T("Failed to recreate icon #%d\n"), m_nID);
+        TRACE(_T("Failed to recreate icon #%d\n"), m_id);
 }
 
 /**
@@ -184,19 +180,19 @@ void NotifyIcon::Recreate() const
  */
 BOOL NotifyIcon::Destroy()
 {
-    if (!m_nID)
+    if (!m_id)
         return FALSE;
 
-    DECLARE_NOFIFYICONDATA_2(nid, m_nID, m_hOwnerWnd);
+    DECLARE_NOFIFYICONDATA_2(nid, m_id, m_hOwnerWnd);
     
     BOOL success = ::Shell_NotifyIcon(NIM_DELETE, &nid);
     if(success)
     {
-        TRACE(_T("Icon #%d deleted\n"), m_nID);
-        m_nID = 0;
+        TRACE(_T("Icon #%d deleted\n"), m_id);
+        m_id = 0;
     }
     else
-        TRACE(_T("Failed to delete icon #%d\n"), m_nID);
+        TRACE(_T("Failed to delete icon #%d\n"), m_id);
     return success;
 }
 
@@ -208,20 +204,20 @@ BOOL NotifyIcon::Destroy()
  */
 BOOL NotifyIcon::SetIcon(HICON hIcon)
 {
-    if (!m_nID)
+    if (!m_id)
         throw std::logic_error("The NotifyIcon is not created");
 
     m_hIcon = hIcon;
 
-    DECLARE_NOFIFYICONDATA_2(nid, m_nID, m_hOwnerWnd);
+    DECLARE_NOFIFYICONDATA_2(nid, m_id, m_hOwnerWnd);
     nid.hIcon = m_hIcon;
     nid.uFlags = NIF_ICON;
 
     BOOL success = ::Shell_NotifyIcon(NIM_MODIFY, &nid);
     if(success)
-        TRACE(_T("Icon #%d modified\n"), m_nID);
+        TRACE(_T("Icon #%d modified\n"), m_id);
     else
-        TRACE(_T("Failed to modify icon #%d\n"), m_nID);
+        TRACE(_T("Failed to modify icon #%d\n"), m_id);
     return success;
 }
 
@@ -233,12 +229,12 @@ BOOL NotifyIcon::SetIcon(HICON hIcon)
  */
 BOOL NotifyIcon::SetToolTip(LPCTSTR szToolTip)
 {
-    if (!m_nID)
+    if (!m_id)
         throw std::logic_error("The NotifyIcon is not created");
 
     m_toolTip = szToolTip;
 
-    DECLARE_NOFIFYICONDATA_2(nid, m_nID, m_hOwnerWnd);
+    DECLARE_NOFIFYICONDATA_2(nid, m_id, m_hOwnerWnd);
     lstrcpyn(nid.szTip, (LPCTSTR)m_toolTip, m_toolTip.GetLength() / sizeof(TCHAR));
     nid.uFlags = NIF_TIP;
 
@@ -260,10 +256,10 @@ BOOL NotifyIcon::SetToolTip(LPCTSTR szToolTip)
 
 BOOL NotifyIcon::ShowBalloonTip(LPCTSTR szTitle, LPCTSTR szText, UINT uFlags, UINT uTimeout, HICON hUserIcon)
 {
-    if (!m_nID)
+    if (!m_id)
         throw std::logic_error("The NotifyIcon is not created");
 
-    DECLARE_NOFIFYICONDATA_2(nid, m_nID, m_hOwnerWnd);
+    DECLARE_NOFIFYICONDATA_2(nid, m_id, m_hOwnerWnd);
     nid.uFlags = NIF_INFO;
     nid.dwInfoFlags = uFlags;
     nid.uTimeout = uTimeout;
@@ -283,27 +279,12 @@ BOOL NotifyIcon::ShowBalloonTip(LPCTSTR szTitle, LPCTSTR szText, UINT uFlags, UI
  */
 BOOL NotifyIcon::HideBalloonTip()
 {
-    if (!m_nID)
+    if (!m_id)
         throw std::logic_error("The NotifyIcon is not created");
 
-    DECLARE_NOFIFYICONDATA_2(nid, m_nID, m_hOwnerWnd);
+    DECLARE_NOFIFYICONDATA_2(nid, m_id, m_hOwnerWnd);
     nid.uFlags = NIF_INFO;
     lstrcpyn(nid.szInfo, _T(""), sizeof(nid.szInfo) / sizeof(nid.szInfo[0]));
 
     return ::Shell_NotifyIcon(NIM_MODIFY, &nid);
-}
-
-void NotifyIcon::HandleWindowsMsg(UINT uMsg, UINT xAnchor, UINT yAnchor)
-{
-    if (uMsg == WM_RBUTTONUP && m_hMenu)
-    {
-        ::SetForegroundWindow(m_hOwnerWnd);
-        CPoint pt = GetCursorPos();
-        UINT selected = ::TrackPopupMenu(m_hMenu, TPM_RETURNCMD | TPM_NONOTIFY, pt.x, pt.y, 0, m_hOwnerWnd, NULL);
-        m_menuItemSelectedEvent(*this, selected);
-    }
-    else
-    {
-        m_notifyIconEvent(*this, uMsg, xAnchor, yAnchor);
-    }
 }
