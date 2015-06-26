@@ -1,6 +1,7 @@
 bin/**
 ipch/**
 obj/**
+*_report.html
 *.opensdf
 *.sdf
 *.suo
