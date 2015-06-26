@@ -142,7 +142,7 @@ HWND CoolShellMainWnd::CreateEx(DWORD dwExStyle, LPCTSTR lpszClassName, LPCTSTR 
 
 void CoolShellMainWnd::OnInitialUpdate()
 {
-    m_notifyIcon.OnNotifyIconEvent().connect([this] (NotifyIcon& /*icon*/, UINT notifyIconMsg, UINT /*xAnchor*/, UINT /*yAnchor*/)
+    m_notifyIcon.GetNotifyIconEvent().connect([this] (NotifyIcon& /*icon*/, UINT notifyIconMsg, UINT /*xAnchor*/, UINT /*yAnchor*/)
     {
         switch (notifyIconMsg)
         {
@@ -163,7 +163,7 @@ void CoolShellMainWnd::OnInitialUpdate()
         }
     });
 
-    m_notifyIcon.Create(::LoadIcon(GetApp()->GetResourceHandle(), MAKEINTRESOURCE(IDI_COOLSHELL)), COOLSHELL_APPLICATION_NAME);
+    m_notifyIcon.Create(m_hWnd, ::LoadIcon(GetApp()->GetResourceHandle(), MAKEINTRESOURCE(IDI_COOLSHELL)), COOLSHELL_APPLICATION_NAME);
 }
 
 LRESULT CoolShellMainWnd::WndProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -175,6 +175,9 @@ LRESULT CoolShellMainWnd::WndProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         m_application->Quit(0);
         break;
     }
+
+    if (m_notifyIcon.WndProc(uMsg, wParam, lParam))
+        return FALSE;
 
     return CWnd::WndProc(uMsg, wParam, lParam);
 }

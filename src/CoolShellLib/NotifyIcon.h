@@ -15,8 +15,6 @@
 
 #pragma once
 
-#include <unordered_map>
-
 #include <boost/noncopyable.hpp>
 #include <boost/signals2.hpp>
 #include <boost/optional.hpp>
@@ -28,6 +26,7 @@
  *      Wraps the Windows shell Api functions to display a notify icon into the system notification area.
  *      WM_xxx messages are exposed through events.
  *      Icons are automatically recreated in the case of task bar recreation.
+ *      Menu is displayed automatically when set.
  */
 class NotifyIcon : private boost::noncopyable
 {
@@ -35,25 +34,21 @@ public:
     typedef boost::signals2::signal<void (NotifyIcon&, UINT, UINT, UINT)> NotifyIconEvent;
     typedef boost::signals2::signal<void (NotifyIcon&, UINT)> MenuItemSelectedEvent;
 
-protected:
-    static UINT WM_NOTIFYICON_MSG;							/**< registered window message for notify icon notification */
-    static UINT WM_TASKBAR_CREATED;                         /**< registered window message for system wide task bar creation notification */
-    class NotifyIconWnd;
-    static NotifyIconWnd s_internalWnd;                     /**< a window to process Windows messages */
-    static UINT s_IDGen;									/**< unique identifier generator */
-    static std::unordered_map<UINT, NotifyIcon*> s_allIcons;/**< map of created instance (e.g. installed in the tray) */
-    static boost::optional<UINT> s_notifyIconVersion;
+    static UINT WM_NOTIFYICON_MSG;      /**< registered window message for notify icon notification */
+    static UINT WM_TASKBAR_CREATED;     /**< registered window message for system wide task bar creation notification */
 
-    static UINT GetNextID();
-    static HWND GetPrivateWindow();
+protected:
+    static UINT s_IDGen;
+    static boost::optional<UINT> s_notifyIconVersion;
     static void SetNotifyIconVersion();
 
 public:
     NotifyIcon();
-    virtual ~NotifyIcon();
+    ~NotifyIcon();
 
-    virtual BOOL Create(HICON hIcon, LPCTSTR szToolTip);
-    virtual BOOL Destroy();
+    BOOL Create(HWND hWndParent, HICON hIcon, LPCTSTR szToolTip);
+    BOOL Destroy();
+    LRESULT WndProc(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
     BOOL SetIcon(HICON hIcon);
     BOOL SetToolTip(LPCTSTR szToolTip);
@@ -61,15 +56,14 @@ public:
     BOOL HideBalloonTip();
 
     void SetMenu(HMENU menu) { m_hMenu = menu; }
-    HMENU GetMenu() const    { return m_hMenu; }
     HWND GetOwnerWindow() const { return m_hOwnerWnd; }
     
-    NotifyIconEvent& OnNotifyIconEvent()            { return m_notifyIconEvent; }
-    MenuItemSelectedEvent& OnMenuItemSelected()     { return m_menuItemSelectedEvent; }
+    NotifyIconEvent& GetNotifyIconEvent()            { return m_notifyIconEvent; }
+    MenuItemSelectedEvent& GetMenuItemSelected()     { return m_menuItemSelectedEvent; }
 
 protected:
-    virtual void Recreate() const;
-    virtual void HandleWindowsMsg(UINT notifyIconId, UINT notifyIconMsg, UINT xAnchor, UINT yAnchor);
+    void Recreate() const;
+    void HandleWindowsMsg(UINT uMsg, UINT xAnchor, UINT yAnchor);
 
 private:
     UINT m_nID;                                      /**< unique identifier of the icon */

@@ -24,51 +24,6 @@
 #define NOTIFYICON_VERSION_4 4
 #endif
 
-//////////////////////////////////////////////////////////////////////////
-
-class NotifyIcon::NotifyIconWnd : public CWnd
-{
-public:
-    NotifyIconWnd() { }
-    virtual ~NotifyIconWnd() { }
-
-    virtual HWND CreateEx(DWORD dwExStyle, LPCTSTR lpszClassName, LPCTSTR lpszWindowName, DWORD dwStyle, int x, int y, int nWidth, int nHeight, CWnd* pParent, CMenu* pMenu, LPVOID lpParam = NULL)
-    {
-        dwStyle ^= WS_VISIBLE;
-        return CWnd::CreateEx(dwExStyle, lpszClassName, lpszWindowName, dwStyle, 0, 0, 0, 0, pParent, pMenu, lpParam);
-    }
-
-protected:
-    virtual LRESULT WndProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
-    {
-        if (uMsg == NotifyIcon::WM_NOTIFYICON_MSG)
-        {
-            UINT notifyIconId = ((*s_notifyIconVersion > NOTIFYICON_VERSION) ? HIWORD(lParam) : static_cast<UINT>(wParam));
-            UINT notifyIconMsg = ((*s_notifyIconVersion > NOTIFYICON_VERSION) ? LOWORD(lParam) : static_cast<UINT>(lParam));
-            TRACE(_T("WM_NOTIFYICON_MSG: %d received for icon #%d\n"), notifyIconMsg, notifyIconId);
-
-            auto i = s_allIcons.find(notifyIconId);
-            if (i != s_allIcons.end())
-            {
-                UINT xAnchor = ((*s_notifyIconVersion > NOTIFYICON_VERSION) ? GET_X_LPARAM(lParam) : 0);
-                UINT yAnchor = ((*s_notifyIconVersion > NOTIFYICON_VERSION) ? GET_Y_LPARAM(lParam) : 0);
-                i->second->HandleWindowsMsg(notifyIconId, notifyIconMsg, xAnchor, yAnchor);
-                return TRUE;
-            }
-        }
-        else if(uMsg == NotifyIcon::WM_TASKBAR_CREATED)
-        {
-            TRACE(_T("WM_TASKBAR_CREATED received\n"));
-            for(auto i = s_allIcons.cbegin(); i != s_allIcons.cend(); ++i)
-                i->second->Recreate();
-        }
-
-        return CWnd::WndProc(uMsg, wParam, lParam);
-    }
-};
-
-//////////////////////////////////////////////////////////////////////////
-
 #define DECLARE_NOFIFYICONDATA(__nid) \
     NOTIFYICONDATA __nid; \
     memset(&__nid, 0, sizeof(NOTIFYICONDATA)); \
@@ -86,36 +41,14 @@ protected:
 UINT NotifyIcon::WM_NOTIFYICON_MSG = ::RegisterWindowMessage(_T("{A4D2B94F-96A4-47a6-BABD-5059D2E3A44F}"));
 UINT NotifyIcon::WM_TASKBAR_CREATED = ::RegisterWindowMessage(_T("TaskbarCreated"));
 UINT NotifyIcon::s_IDGen = 0;
-std::unordered_map<UINT, NotifyIcon*> NotifyIcon::s_allIcons;
-NotifyIcon::NotifyIconWnd NotifyIcon::s_internalWnd;
 boost::optional<UINT> NotifyIcon::s_notifyIconVersion;
-
-/**
- * \brief Returns a handle to the window that manages notify icon Windows messages.
- * \return window handle.
- */
-HWND NotifyIcon::GetPrivateWindow()
-{
-    if(!s_internalWnd.IsWindow())
-        s_internalWnd.Create();
-    return s_internalWnd.GetHwnd();
-}
-
-/**
- * \brief Returns the unique identifier to assign to a new notify icon instance.
- * \return A unique identifier.
- */
-UINT NotifyIcon::GetNextID()
-{
-    return ++s_IDGen;
-}
 
 void NotifyIcon::SetNotifyIconVersion()
 {
     WinVersionInfo info;
-    if(info.GetWindowsVersion() >= WinVersionInfo::win_vista)
+    if (info.GetWindowsVersion() >= WinVersionInfo::WinVersion::win_vista)
         s_notifyIconVersion = NOTIFYICON_VERSION_4;
-    else if(info.GetWindowsVersion() >= WinVersionInfo::win_2000)
+    else if (info.GetWindowsVersion() >= WinVersionInfo::WinVersion::win_2000)
         s_notifyIconVersion = NOTIFYICON_VERSION;
     else
         s_notifyIconVersion = 0;
@@ -125,9 +58,6 @@ void NotifyIcon::SetNotifyIconVersion()
 
 //////////////////////////////////////////////////////////////////////////
 
-/**
- * \brief Empty constructor.
- */
 NotifyIcon::NotifyIcon() :
     m_nID(0),
     m_hOwnerWnd(NULL),
@@ -141,9 +71,6 @@ NotifyIcon::NotifyIcon() :
         SetNotifyIconVersion();
 }
 
-/**
- * \brief Virtual destructor. Destroys the notify icon if not already done.
- */
 NotifyIcon::~NotifyIcon()
 {
     try
@@ -162,15 +89,15 @@ NotifyIcon::~NotifyIcon()
  * \return Returns TRUE if successful, or FALSE otherwise
  */
 
-BOOL NotifyIcon::Create(HICON hIcon, LPCTSTR szToolTip)
+BOOL NotifyIcon::Create(HWND hWndParent, HICON hIcon, LPCTSTR szToolTip)
 {
     if(m_nID)
         throw std::logic_error("The NotifyIcon is already created");
 
     DECLARE_NOFIFYICONDATA(nid);
 
-    nid.uID = GetNextID();
-    nid.hWnd = GetPrivateWindow();
+    nid.uID = ++s_IDGen;
+    nid.hWnd = hWndParent;
     nid.hIcon = hIcon;
     nid.uCallbackMessage = WM_NOTIFYICON_MSG;
     nid.uFlags = NIF_ICON | NIF_MESSAGE;
@@ -190,14 +117,41 @@ BOOL NotifyIcon::Create(HICON hIcon, LPCTSTR szToolTip)
     if(!::Shell_NotifyIcon(NIM_SETVERSION, &nid))
         TRACE(_T("NIM_SETVERSION failed for icon #%d\n"), m_nID);
 
-    m_hOwnerWnd = nid.hWnd;
+    m_hOwnerWnd = hWndParent;
     m_nID = nid.uID;
     m_hIcon = nid.hIcon;
     m_toolTip = nid.szTip;
 
-    s_allIcons.insert(std::pair<UINT, NotifyIcon*>(m_nID, this));
     TRACE(_T("Icon #%d added\n"), m_nID);
     return TRUE;
+}
+
+
+LRESULT NotifyIcon::WndProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    if (uMsg == NotifyIcon::WM_NOTIFYICON_MSG)
+    {
+        UINT notifyIconId = ((*s_notifyIconVersion > NOTIFYICON_VERSION) ? HIWORD(lParam) : static_cast<UINT>(wParam));
+
+        if (notifyIconId == m_nID)
+        {
+            UINT xAnchor = ((*s_notifyIconVersion > NOTIFYICON_VERSION) ? GET_X_LPARAM(lParam) : 0);
+            UINT yAnchor = ((*s_notifyIconVersion > NOTIFYICON_VERSION) ? GET_Y_LPARAM(lParam) : 0);
+            UINT notifyIconMsg = ((*s_notifyIconVersion > NOTIFYICON_VERSION) ? LOWORD(lParam) : static_cast<UINT>(lParam));
+
+            TRACE(_T("WM_NOTIFYICON_MSG: %d received for icon #%d\n"), notifyIconMsg, notifyIconId);
+
+            HandleWindowsMsg(notifyIconMsg, xAnchor, yAnchor);
+            return TRUE;
+        }
+    }
+    else if (uMsg == NotifyIcon::WM_TASKBAR_CREATED)
+    {
+        TRACE(_T("WM_TASKBAR_CREATED received\n"));
+        Recreate();
+    }
+
+    return FALSE;
 }
 
 /**
@@ -231,7 +185,7 @@ void NotifyIcon::Recreate() const
 BOOL NotifyIcon::Destroy()
 {
     if (!m_nID)
-        throw std::logic_error("The NotifyIcon is not created");
+        return FALSE;
 
     DECLARE_NOFIFYICONDATA_2(nid, m_nID, m_hOwnerWnd);
     
@@ -239,14 +193,7 @@ BOOL NotifyIcon::Destroy()
     if(success)
     {
         TRACE(_T("Icon #%d deleted\n"), m_nID);
-
-        s_allIcons.erase(m_nID);
-
         m_nID = 0;
-        m_hIcon = NULL;
-        m_hMenu = NULL;
-        m_hOwnerWnd = NULL;
-        m_toolTip.Empty();
     }
     else
         TRACE(_T("Failed to delete icon #%d\n"), m_nID);
@@ -346,31 +293,17 @@ BOOL NotifyIcon::HideBalloonTip()
     return ::Shell_NotifyIcon(NIM_MODIFY, &nid);
 }
 
-/**
- * \brief Map Windows messages to events.
- *
- * \param [in] wParam: the original wParam value sent by Windows
- * \param [in] lParam: the original wParam value sent by Windows
- */
-void NotifyIcon::HandleWindowsMsg(UINT notifyIconId, UINT notifyIconMsg, UINT xAnchor, UINT yAnchor)
+void NotifyIcon::HandleWindowsMsg(UINT uMsg, UINT xAnchor, UINT yAnchor)
 {
-    switch (notifyIconMsg)
+    if (uMsg == WM_RBUTTONUP && m_hMenu)
     {
-    case WM_RBUTTONUP:
-        if (m_hMenu)
-        {
-            ::SetForegroundWindow(m_hOwnerWnd);
-            CPoint pt = GetCursorPos();
-            UINT selected = ::TrackPopupMenu(m_hMenu, TPM_RETURNCMD | TPM_NONOTIFY, pt.x, pt.y, 0, m_hOwnerWnd, NULL);
-            m_menuItemSelectedEvent(*this, selected);
-        }
-        else
-        {
-            m_notifyIconEvent(*this, notifyIconMsg, xAnchor, yAnchor);
-        }
-        break;
-    default:
-        m_notifyIconEvent(*this, notifyIconMsg, xAnchor, yAnchor);
-        break;
+        ::SetForegroundWindow(m_hOwnerWnd);
+        CPoint pt = GetCursorPos();
+        UINT selected = ::TrackPopupMenu(m_hMenu, TPM_RETURNCMD | TPM_NONOTIFY, pt.x, pt.y, 0, m_hOwnerWnd, NULL);
+        m_menuItemSelectedEvent(*this, selected);
+    }
+    else
+    {
+        m_notifyIconEvent(*this, uMsg, xAnchor, yAnchor);
     }
 }

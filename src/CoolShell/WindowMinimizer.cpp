@@ -50,42 +50,42 @@ WindowMinimizer::~WindowMinimizer()
 
 void WindowMinimizer::MinimizeWindow(HWND hWnd)
 {
-    if (!::IsWindow(hWnd))
-        throw std::runtime_error("Bad window handle");
+    //if (!::IsWindow(hWnd))
+    //    throw std::runtime_error("Bad window handle");
 
-    ::ShowWindow(hWnd, SW_HIDE);
+    //::ShowWindow(hWnd, SW_HIDE);
 
-    if (m_minimizedWindowIcons.find(hWnd) == m_minimizedWindowIcons.end())
-    {
-        NotifyIconPtr iconPtr(new NotifyIcon());
-        iconPtr->Create(WinApi::GetWindowIcon(hWnd), WinApi::GetWindowText(hWnd).c_str());
-        ::SetForegroundWindow(iconPtr->GetOwnerWindow());
+    //if (m_minimizedWindowIcons.find(hWnd) == m_minimizedWindowIcons.end())
+    //{
+    //    NotifyIconPtr iconPtr(new NotifyIcon());
+    //    iconPtr->Create(WinApi::GetWindowIcon(hWnd), (LPCTSTR)WinApi::GetWindowText(hWnd));
+    //    ::SetForegroundWindow(iconPtr->GetOwnerWindow());
 
-        iconPtr->OnNotifyIconEvent().connect([ = ] (NotifyIcon& icon, UINT notifyIconMsg, UINT /*xAnchor*/, UINT /*yAnchor*/)
-        {
-            // it may happen that the window is destroyed by an other way than the tray icon
-            if(!::IsWindow(hWnd))
-            {
-                this->RemoveIcon(hWnd); 
-                return;
-            }
+    //    iconPtr->GetNotifyIconEvent().connect([ = ] (NotifyIcon& icon, UINT notifyIconMsg, UINT /*xAnchor*/, UINT /*yAnchor*/)
+    //    {
+    //        // it may happen that the window is destroyed by an other way than the tray icon
+    //        if(!::IsWindow(hWnd))
+    //        {
+    //            this->RemoveIcon(hWnd); 
+    //            return;
+    //        }
 
-            switch(notifyIconMsg)
-            {
-            case WM_RBUTTONUP:
-                this->ContextMenu(icon, hWnd);
-                break;
-            case WM_LBUTTONUP:
-                this->ToggleWindowVisibility(hWnd);
-                break;
-            case WM_LBUTTONDBLCLK:
-                this->RestoreWindow(hWnd);
-                break;
-            }
-        });
+    //        switch(notifyIconMsg)
+    //        {
+    //        case WM_RBUTTONUP:
+    //            this->ContextMenu(icon, hWnd);
+    //            break;
+    //        case WM_LBUTTONUP:
+    //            this->ToggleWindowVisibility(hWnd);
+    //            break;
+    //        case WM_LBUTTONDBLCLK:
+    //            this->RestoreWindow(hWnd);
+    //            break;
+    //        }
+    //    });
 
-        m_minimizedWindowIcons.insert(std::pair<HWND, NotifyIconPtr>(hWnd, iconPtr));
-    }
+    //    m_minimizedWindowIcons.insert(std::pair<HWND, NotifyIconPtr>(hWnd, iconPtr));
+    //}
 }
 
 void WindowMinimizer::RestoreWindow(HWND hWnd)
