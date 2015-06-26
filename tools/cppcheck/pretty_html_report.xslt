@@ -12,7 +12,7 @@
             line-height: 1.5em;
           }
           table {
-            border-collapse: collapse; 
+            border-collapse: collapse;
             border-spacing: 0;
           }
           th {
