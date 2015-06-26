@@ -1,7 +1,7 @@
-artifacts/**
 bin/**
 ipch/**
 obj/**
 *.opensdf
 *.sdf
 *.suo
+*.zip
