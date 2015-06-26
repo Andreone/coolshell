@@ -1,26 +1,27 @@
-require 'albacore'
+require 'zip'
 require_relative './tools/rake_tools/versioning.rb'
+require_relative './tools/rake_tools/msbuild.rb'
 
 $project_name = 'CoolShell'
 $solution_file = 'CoolShell.sln'
 $artifacts_dir = 'artifacts'
 $staging_area_dir = 'staging_area'
 
-$configuration = ENV['config'] || 'Release'
-$platform = ENV['platform'] || 'Win32'
-$toolset = ENV['toolset'] || 'v110'
-
+$build_configuration = ENV['config'] || 'Release'
+$build_platform = ENV['platform'] || 'Win32'
+$build_toolset = ENV['toolset'] || 'v120'
 $project_resource_file = File.join('src', $project_name, $project_name + '.rc')
+
 def GetBuildOutputDir()
-  File.join('bin', $configuration + '_' + $platform)
+  File.join('bin', $build_configuration + '_' + $build_platform)
 end
 
 build_number = ENV['BUILD_NUMBER'] || '1'
 $version = "1.0.0" + ".#{build_number}"
   
-#puts "Configuration: #{$configuration}"
-#puts "Platform: #{$platform}"
-#puts "Toolset: #{$toolset}"
+#puts "Configuration: #{$build_configuration}"
+#puts "Platform: #{$build_platform}"
+#puts "Toolset: #{$build_toolset}"
 #puts "Version: #{$version}"
 #puts
 
@@ -37,32 +38,42 @@ desc 'Update x64 version, build and create artifacts'
 task :all64 => [:set64, :all]
 
 task :set64 do
-  $platform = 'x64'
-end
-
-# Albacore configuration task run before any other task: configure default task properties
-Albacore.configure do |config|
-  # setting log level to :verbose causes the full command line call for each task to be logged
-  # config.log_level = :verbose
-  # override default msbuild verbosity ('normal') so the output of post-build steps / unit tests is forwarded to stdout
-  # config.msbuild.verbosity = 'detailed'
-  config.msbuild.solution = $solution_file
+  $build_platform = 'x64'
 end
 
 ################################################################################
 
-desc 'Run a build of the whole solution'
-msbuild :build do |t|
-  t.properties :configuration => $configuration, :Platform => $platform, :PlatformToolset => $toolset
-  t.targets :Build
+def make_msbuild_command_line(msbuild_targets)
+  properties = {
+    Msbuild::Properties::Configuration => $build_configuration,
+    Msbuild::Properties::Platform => $build_platform,
+    Msbuild::Properties::Toolset => $build_toolset
+    }
 
-  puts "Building #{$solution_file}..."
+  msbuild_script = File.expand_path($solution_file).gsub('/', '\\')
+
+  cmdline = Msbuild::env_command_line($build_toolset, $build_platform)
+  cmdline += " & "
+  cmdline += Msbuild::command_line(msbuild_script, msbuild_targets, properties)
+
+  unless !$number_of_processors
+    cmdline += " /m"
+    cmdline += ":#{$number_of_processors}" if $number_of_processors.to_i > 0
+  end
+  
+  cmdline
 end
 
-desc 'Clean the whole solution'
-msbuild :clean do |t|
-  t.properties :configuration => $configuration, :Platform => $platform, :PlatformToolset => $toolset
-  t.targets :Clean
+# desc 'Run a build of the whole solution'
+task :build do
+  cmdline = make_msbuild_command_line(['Build'])
+  sh cmdline
+end
+
+# desc 'Clean the whole solution'
+task  :clean do
+  cmdline = make_msbuild_command_line(['Clean'])
+  sh cmdline
 end
 
 desc 'Rebuild the whole solution'
@@ -73,34 +84,18 @@ task :versioning do
   Versioning.write_cpp_version($project_resource_file, $version)
 end
 
-################################################################################
-
 desc 'Create artifacts from built files'
-task :artifacts => [:artifacts_prepare, :artifacts_generate, :artifacts_cleanup]
-
-task :artifacts_prepare do
-  FileUtils.mkdir_p($artifacts_dir) unless File.directory? $artifacts_dir
-  FileUtils.remove_dir($staging_area_dir) if File.directory? $staging_area_dir
-  FileUtils.mkdir_p($staging_area_dir)
-
-  FileList[ GetBuildOutputDir() + '/CoolShell.exe',
-            'license.txt',
-            'credits.txt'].exclude(/.*Tests.*/).each do |file|
-    FileUtils.cp file, $staging_area_dir
-    puts
-    puts file
+task :artifacts do
+  zipfile_name = $project_name + '-' + $version + '-' + $build_platform + '.zip'
+  puts "generating #{zipfile_name}..."
+  
+  FileUtils.rm(zipfile_name) if File.exist?(zipfile_name)
+    
+  Zip::File.open(zipfile_name, Zip::File::CREATE) do |zipfile|
+    zipfile.add('CoolShell.exe', GetBuildOutputDir() + '/CoolShell.exe')
+    zipfile.add('license.txt', 'license.txt')
+    zipfile.add('credits.txt', 'credits.txt')
   end
-end
-
-zip :artifacts_generate do |zip|
-  zip.directories_to_zip $staging_area_dir
-  zip.output_file = $project_name + '-' + $version + '-' + $platform + '.zip'
-  zip.output_path = $artifacts_dir
-  puts "generating #{zip.output_file}..."
-end
-
-task :artifacts_cleanup do
-  FileUtils.remove_dir($staging_area_dir) if File.directory? $staging_area_dir
 end
 
 ################################################################################
@@ -115,7 +110,7 @@ task :cloc do
   analysed_folders = 'src'
   xml_result = 'cloc.xml'
   html_report = 'cloc_report.html'
-  sh "cloc --out=#{xml_result} --xml --quiet --skip-uniqueness --force-lang=C++,h #{analysed_folders}"
+  sh "tools\\cloc\\cloc --out=#{xml_result} --xml --quiet --skip-uniqueness --force-lang=C++,h #{analysed_folders}"
   `xml tr tools\\cloc\\pretty_cloc.xsl #{xml_result} > #{html_report}`
   FileUtils.rm(xml_result) if File.exist?(xml_result)
 end
@@ -125,7 +120,7 @@ task :cppcheck do
   analysed_folders = 'src'
   xml_result = 'cppcheck_results.xml'
   html_report = 'cppcheck_report.html'
-  sh "cppcheck -j#{ENV['NUMBER_OF_PROCESSORS']} --enable=all --xml -D_MFC_VER #{analysed_folders} 2> #{xml_result}"
+  sh "tools\\cppcheck\\cppcheck -j#{ENV['NUMBER_OF_PROCESSORS']} --enable=all --xml -D_MFC_VER #{analysed_folders} 2> #{xml_result}"
   `xml tr tools\\cppcheck\\pretty_html_report.xslt #{xml_result} > #{html_report}`
   FileUtils.rm(xml_result) if File.exist?(xml_result)
 end
