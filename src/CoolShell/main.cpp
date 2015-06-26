@@ -28,7 +28,7 @@ int APIENTRY WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
         LOG_DEBUG(_T("Console hidden"));
 #endif
         // register a handler to console events so we can terminate the process in a clean way
-        DWORD tid = ::GetCurrentThreadId();
+        auto tid = ::GetCurrentThreadId();
         Console::RegisterCtrlHandler([=] (DWORD /*dwCtrlType*/) -> BOOL {
             return ::PostThreadMessage(tid, WM_QUIT, 0, NULL);
         });

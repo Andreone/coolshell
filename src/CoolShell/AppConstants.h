@@ -16,3 +16,4 @@
 #pragma once
 
 #define COOLSHELL_APPLICATION_NAME  _T("CoolShell")
+#define COOLSHELL_EXE_NAME          _T("CoolShell.exe")

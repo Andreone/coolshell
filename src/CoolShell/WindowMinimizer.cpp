@@ -17,7 +17,6 @@
 #include "WindowMinimizer.h"
 
 #include "CoolShellLib\NotifyIcon.h"
-#include "CoolShellLib\WinApi.h"
 #include "CoolShellLib\Handles.h"
 
 //////////////////////////////////////////////////////////////////////////

@@ -32,8 +32,8 @@ public:
         CWnd* pParent, CMenu* pMenu, LPVOID lpParam = NULL) override;
         
 protected:
-    virtual void OnInitialUpdate();
-    virtual LRESULT WndProc(UINT uMsg, WPARAM wParam, LPARAM lParam);
+    void OnInitialUpdate() override;
+    LRESULT WndProc(UINT uMsg, WPARAM wParam, LPARAM lParam) override;
 
 private:
     IApplication* m_application;

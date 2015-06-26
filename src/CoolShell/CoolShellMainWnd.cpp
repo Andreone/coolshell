@@ -37,7 +37,7 @@ public:
 protected:
     virtual BOOL OnInitDialog()
     {
-        auto v = Version::GetFileVersion(_T("CoolShell.exe"));
+        auto v = Version::GetFileVersion(COOLSHELL_EXE_NAME);
         SetDlgItemText(IDC_STATIC_VERSION, v.ToString<CString>());
         return TRUE;
     }
@@ -142,9 +142,9 @@ HWND CoolShellMainWnd::CreateEx(DWORD dwExStyle, LPCTSTR lpszClassName, LPCTSTR 
 
 void CoolShellMainWnd::OnInitialUpdate()
 {
-    m_notifyIcon.GetNotifyIconEvent().connect([this] (NotifyIcon& /*icon*/, UINT notifyIconMsg, UINT /*xAnchor*/, UINT /*yAnchor*/)
+    m_notifyIcon.GetNotifyMouseEvent().connect([this] (NotifyIcon& /*icon*/, UINT uMsg, UINT /*xAnchor*/, UINT /*yAnchor*/)
     {
-        switch (notifyIconMsg)
+        switch (uMsg)
         {
         case WM_RBUTTONUP:
             {
