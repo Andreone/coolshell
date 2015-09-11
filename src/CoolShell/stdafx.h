@@ -10,7 +10,7 @@
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
 
 // This Win32++ file must be included before windows.h (required by Win32++ to set some important macros)
-#include "Win32xx\wincore.h"
+#include "Win32xx\wxx_wincore.h"
 
 // Windows Header Files
 #include <windows.h>
@@ -28,14 +28,12 @@
 #include <stdarg.h>
 
 // STL header files
-#include <deque>
+#include <algorithm>
 #include <functional>
+#include <exception>
 #include <iostream>
-#include <iosfwd>
-#include <list>
 #include <map>
 #include <memory>
-#include <queue>
 #include <string>
 #include <unordered_map>
 #include <vector>
