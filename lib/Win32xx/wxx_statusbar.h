@@ -1,12 +1,12 @@
-// Win32++   Version 7.3
-// Released: 30th November 2011
+// Win32++   Version 8.0.1
+// Release Date: 28th July 2015
 //
 //      David Nash
 //      email: dnash@bigpond.net.au
 //      url: https://sourceforge.net/projects/win32-framework
 //
 //
-// Copyright (c) 2005-2011  David Nash
+// Copyright (c) 2005-2015  David Nash
 //
 // Permission is hereby granted, free of charge, to
 // any person obtaining a copy of this software and
@@ -38,7 +38,7 @@
 #ifndef _WIN32XX_STATUSBAR_H_
 #define _WIN32XX_STATUSBAR_H_
 
-#include "wincore.h"
+#include "wxx_wincore.h"
 
 namespace Win32xx
 {
@@ -53,18 +53,24 @@ namespace Win32xx
 		virtual ~CStatusBar() {}
 
 	// Overridables
+		virtual BOOL OnEraseBkgnd(CDC& dc);
 		virtual void PreCreate(CREATESTRUCT& cs);
 		virtual void PreRegisterClass(WNDCLASS &wc);
 
 	// Attributes
 		int GetParts();
-		HICON GetPartIcon(int iPart);
+
 		CRect GetPartRect(int iPart);
 		CString GetPartText(int iPart) const;
 		BOOL IsSimple();
-		BOOL SetPartIcon(int iPart, HICON hIcon);
 		BOOL SetPartText(int iPart, LPCTSTR szText, UINT Style = 0) const;
 		BOOL SetPartWidth(int iPart, int iWidth) const;
+
+#if (_WIN32_IE >= 0x0400)
+		HICON GetPartIcon(int iPart);
+		BOOL SetPartIcon(int iPart, HICON hIcon);
+#endif
+
 
 	// Operations
 		CStatusBar(const CStatusBar&);				// Disable copy construction
@@ -95,27 +101,29 @@ namespace Win32xx
 	// If an element of iPaneWidths is -1, the right edge of the corresponding part extends
 	//  to the border of the window
 	{
-		assert(::IsWindow(m_hWnd));
+		assert(IsWindow());
 		assert(iParts <= 256);	
 		
-		return (BOOL)SendMessage(SB_SETPARTS, iParts, (LPARAM)iPaneWidths);		
+		return static_cast<BOOL>(SendMessage(SB_SETPARTS, (WPARAM)iParts, (LPARAM)iPaneWidths));		
 	}
 
 	inline int CStatusBar::GetParts()
 	{
-		assert(::IsWindow(m_hWnd));
-		return (int)SendMessage(SB_GETPARTS, 0L, 0L);
+		assert(IsWindow());
+		return static_cast<int>(SendMessage(SB_GETPARTS, 0L, 0L));
 	}
 
+#if (_WIN32_IE >= 0x0400)
 	inline HICON CStatusBar::GetPartIcon(int iPart)
 	{
-		assert(::IsWindow(m_hWnd));
-		return (HICON)SendMessage(SB_GETICON, (WPARAM)iPart, 0L);
+		assert(IsWindow());
+		return reinterpret_cast<HICON>(SendMessage(SB_GETICON, (WPARAM)iPart, 0L));
 	}
+#endif
 
 	inline CRect CStatusBar::GetPartRect(int iPart)
 	{
-		assert(::IsWindow(m_hWnd));
+		assert(IsWindow());
 		
 		CRect rc;
 		SendMessage(SB_GETRECT, (WPARAM)iPart, (LPARAM)&rc);
@@ -124,24 +132,29 @@ namespace Win32xx
 
 	inline CString CStatusBar::GetPartText(int iPart) const
 	{
-		assert(::IsWindow(m_hWnd));
+		assert(IsWindow());
 		CString PaneText;
 		
 		// Get size of Text array
-		int iChars = LOWORD (SendMessage(SB_GETTEXTLENGTH, iPart, 0L));
+		int iChars = LOWORD (SendMessage(SB_GETTEXTLENGTH, (WPARAM)iPart, 0L));
+		CString str;
 
-		std::vector<TCHAR> Text( iChars +1, _T('\0') );
-		TCHAR* pTextArray = &Text[0];
-
-		SendMessage(SB_GETTEXT, iPart, (LPARAM)pTextArray);
-		PaneText = pTextArray;			
-		return PaneText;
+		SendMessage(SB_GETTEXT, (WPARAM)iPart, (LPARAM)str.GetBuffer(iChars));
+		str.ReleaseBuffer();
+		return str;
 	}
 
 	inline BOOL CStatusBar::IsSimple()
 	{
-		assert(::IsWindow(m_hWnd));
-		return (BOOL)SendMessage(SB_ISSIMPLE, 0L, 0L);
+		assert(IsWindow());
+		return static_cast<BOOL>(SendMessage(SB_ISSIMPLE, 0L, 0L));
+	}
+
+	inline BOOL CStatusBar::OnEraseBkgnd(CDC& dc)
+	{
+		// Permit the parent window to handle the drawing of the ReBar's background.
+		// Return TRUE to suppress default background drawing.
+		return (TRUE == GetParent().SendMessage(UWM_DRAWSBBKGND, (WPARAM)&dc, (LPARAM)this));
 	}
 
 	inline void CStatusBar::PreCreate(CREATESTRUCT &cs)
@@ -163,20 +176,22 @@ namespace Win32xx
 	//SBT_POPOUT		The text is drawn with a border to appear higher than the plane of the window.
 	//SBT_RTLREADING	The text will be displayed in the opposite direction to the text in the parent window.
 	{
-		assert(::IsWindow(m_hWnd));
+		assert(IsWindow());
 		
 		BOOL bResult = FALSE;
-		if (SendMessage(SB_GETPARTS, 0L, 0L) >= iPart)
-			bResult = (BOOL)SendMessage(SB_SETTEXT, iPart | Style, (LPARAM)szText);
+		if (static_cast<int>(SendMessage(SB_GETPARTS, 0L, 0L) >= iPart))
+			bResult = static_cast<BOOL>(SendMessage(SB_SETTEXT, (WPARAM)(iPart | Style), (LPARAM)szText));
 
 		return bResult;
 	}
 
+#if (_WIN32_IE >= 0x0400)
 	inline BOOL CStatusBar::SetPartIcon(int iPart, HICON hIcon)
 	{
-		assert(::IsWindow(m_hWnd));
-		return (BOOL)SendMessage(SB_SETICON, (WPARAM)iPart, (LPARAM) hIcon);
+		assert(IsWindow());
+		return static_cast<BOOL>(SendMessage(SB_SETICON, (WPARAM)iPart, (LPARAM) hIcon));
 	}
+#endif
 
 	inline BOOL CStatusBar::SetPartWidth(int iPart, int iWidth) const
 	{
@@ -184,22 +199,22 @@ namespace Win32xx
 		// with the specified width.
 		// A width of -1 for the last part sets the width to the border of the window.
 
-		assert(::IsWindow(m_hWnd));
+		assert(IsWindow());
 		assert(iPart >= 0 && iPart <= 255);
 
-		// Fill the PartWidths vector with the current width of the statusbar parts
-		int PartsCount = (int)SendMessage(SB_GETPARTS, 0L, 0L);
+		// Fill the PartWidths vector with the current width of the StatusBar parts
+		int PartsCount = static_cast<int>(SendMessage(SB_GETPARTS, 0L, 0L));
 		std::vector<int> PartWidths(PartsCount, 0);
 		int* pPartWidthArray = &PartWidths[0];
-		SendMessage(SB_GETPARTS, PartsCount, (LPARAM)pPartWidthArray);
+		SendMessage(SB_GETPARTS, (WPARAM)PartsCount, (LPARAM)pPartWidthArray);
 
-		// Fill the NewPartWidths vector with the new width of the statusbar parts
+		// Fill the NewPartWidths vector with the new width of the StatusBar parts
 		int NewPartsCount = MAX(iPart+1, PartsCount);	
-		std::vector<int> NewPartWidths(NewPartsCount, 0);;
+		std::vector<int> NewPartWidths(NewPartsCount, 0);
 		NewPartWidths = PartWidths;
 		int* pNewPartWidthArray = &NewPartWidths[0];
 		
-		if (0 == iPart)
+		if (iPart == 0)
 			pNewPartWidthArray[iPart] = iWidth;
 		else
 		{
@@ -209,15 +224,15 @@ namespace Win32xx
 				pNewPartWidthArray[iPart] = -1;
 		}
 
-		// Set the statusbar parts with our new parts count and part widths
-		BOOL bResult = (BOOL)SendMessage(SB_SETPARTS, NewPartsCount, (LPARAM)pNewPartWidthArray);
+		// Set the StatusBar parts with our new parts count and part widths
+		BOOL bResult = static_cast<BOOL>(SendMessage(SB_SETPARTS, (WPARAM)NewPartsCount, (LPARAM)pNewPartWidthArray));
 
 		return bResult;
 	}
 
 	inline void CStatusBar::SetSimple(BOOL fSimple /* = TRUE*/)
 	{
-		assert(::IsWindow(m_hWnd));
+		assert(IsWindow());
 		SendMessage(SB_SIMPLE, (WPARAM)fSimple, 0L);
 	}
 

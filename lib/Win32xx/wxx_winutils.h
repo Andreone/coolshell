@@ -1,12 +1,12 @@
-// Win32++   Version 7.3
-// Released: 30th November 2011
+// Win32++   Version 8.0.1
+// Release Date: 28th July 2015
 //
 //      David Nash
 //      email: dnash@bigpond.net.au
 //      url: https://sourceforge.net/projects/win32-framework
 //
 //
-// Copyright (c) 2005-2011  David Nash
+// Copyright (c) 2005-2015  David Nash
 //
 // Permission is hereby granted, free of charge, to
 // any person obtaining a copy of this software and
@@ -34,6 +34,12 @@
 //
 ////////////////////////////////////////////////////////
 
+
+///////////////////////////////////////////////////////
+// wxx_winutils.h
+//  Declaration of the following classes:
+//  CPoint, CRect, and CSize
+
 #ifndef _WIN32XX_WINUTILS_H_
 #define _WIN32XX_WINUTILS_H_
 
@@ -53,13 +59,36 @@
 #define MIN(a,b)            (((a) < (b)) ? (a) : (b))
 
 
+// Define our own VERIFY macro
+// In debug mode, VERIFY asserts if the expression evaluates to zero
+// In release mode, VERIFY evaluates the expression, but doesn't assert.
+#ifndef VERIFY
+  #ifndef NDEBUG
+    #define VERIFY(f) assert(f)
+  #else
+    #define VERIFY(f) ((void)(f))
+  #endif
+#endif
+
+// Ensure UNICODE and _UNICODE definitions are the same
+#ifdef _UNICODE
+  #ifndef UNICODE
+    #define UNICODE
+  #endif
+#endif
+
+#ifdef UNICODE
+  #ifndef _UNICODE
+    #define UNICODE
+  #endif
+#endif
+
+
 namespace Win32xx
 {
 	// Forward declarations
 	class CPoint;
 	class CRect;
-	CWinApp* GetApp();
-	void TRACE(LPCTSTR str);
 
 
 	/////////////////////////////////////////
@@ -92,8 +121,8 @@ namespace Win32xx
 		CPoint operator - (POINT point) const;
 
 		// Operators returning CRect
-		CRect operator + (RECT rc) const;
-		CRect operator - (RECT rc) const;
+		CRect operator + (LPCRECT prc) const;
+		CRect operator - (LPCRECT prc) const;
 	};
 
 
@@ -108,7 +137,7 @@ namespace Win32xx
 		CPoint(POINT pt)					{ x = pt.x ; y = pt.y; }
 		CPoint(POINTS pts)					{ x = pts.x; y = pts.y; }
 		CPoint(SIZE sz)						{ x = sz.cx; y = sz.cy; }
-		CPoint(DWORD dw)					{ x = (short) LOWORD(dw); y = (short) HIWORD(dw); }
+		CPoint(LPARAM dwPos)				{ x = GET_X_LPARAM(dwPos); y = GET_Y_LPARAM(dwPos); }
 
 		void Offset(int dx, int dy)			{ x += dx; y += dy; }
 		void Offset(POINT pt)				{ x += pt.x; y += pt.y; }
@@ -132,8 +161,8 @@ namespace Win32xx
 		CPoint operator - (POINT pt) const	{ return CPoint(x - pt.x, y - pt.y); }
 
 		// Operators returning CRect
-		CRect operator + (RECT rc) const;
-		CRect operator - (RECT rc) const;
+		CRect operator + (LPCRECT prc) const;
+		CRect operator - (LPCRECT prc) const;
 	};
 
 
@@ -145,21 +174,21 @@ namespace Win32xx
 	public:
 		CRect()										{ left = top = right = bottom = 0; }
 		CRect(int l, int t, int r, int b)			{ left = l; top = t; right = r; bottom = b; }
-		CRect(RECT rc)								{ left = rc.left; top = rc.top; right = rc.right; bottom = rc.bottom; }
+		CRect(const RECT& rc)						{ left = rc.left; top = rc.top; right = rc.right; bottom = rc.bottom; }
 		CRect(POINT pt, SIZE sz)					{ right = (left = pt.x) + sz.cx; bottom = (top = pt.y) + sz.cy; }
 		CRect(POINT topLeft, POINT bottomRight)		{ left = topLeft.x; top = topLeft.y; right = bottomRight.x; bottom = bottomRight.y; }
 
-		BOOL CopyRect(RECT rc)						{ return ::CopyRect(this, &rc); }
+		BOOL CopyRect(LPCRECT prc)					{ return ::CopyRect(this, prc); }
 		BOOL DeflateRect(int x, int y)				{ return ::InflateRect(this, -x, -y); }
 		BOOL DeflateRect(SIZE size)					{ return ::InflateRect(this, -size.cx, -size.cy); }
-		BOOL DeflateRect(RECT rc)					{ return ::InflateRect(this, rc.left - rc.right, rc.top - rc.bottom); }
-		BOOL DeflateRect(int l, int t, int r, int b){ return ::InflateRect(this, l - r, t - b); }
-		BOOL EqualRect(RECT rc) const				{ return ::EqualRect(&rc, this); }
+		void DeflateRect(LPCRECT prc)				{ left += prc->left; top += prc->top; right -= prc->right; bottom -= prc->bottom; }
+		void DeflateRect(int l, int t, int r, int b){ left += l; top += t; right -= r; bottom -= b; }
+		BOOL EqualRect(LPRECT prc) const			{ return ::EqualRect(prc, this); }
 		BOOL InflateRect(int dx, int dy)			{ return ::InflateRect(this, dx, dy); }
 		BOOL InflateRect(SIZE sz)					{ return ::InflateRect(this, sz.cx, sz.cy); }
-		BOOL InflateRect(RECT rc)					{ return ::InflateRect(this, rc.right - rc.left, rc.bottom - rc.top); }
-		BOOL InflateRect(int l, int t, int r, int b){ return ::InflateRect(this, r - l, b - t); }
-		BOOL IntersectRect(RECT rc1, RECT rc2)		{ return ::IntersectRect(this, &rc1, &rc2); }
+		void InflateRect(LPCRECT prc)				{ left -= prc->left; top -= prc->top; right += prc->right; bottom += prc->bottom; }
+		void InflateRect(int l, int t, int r, int b){ left -= l; top -= t; right += r; bottom += b; }
+		BOOL IntersectRect(LPCRECT prc1, LPCRECT prc2)	{ return ::IntersectRect(this, prc1, prc2); }
 		BOOL IsRectEmpty() const					{ return ::IsRectEmpty(this);}
 		BOOL IsRectNull() const						{ return (left == 0 && right == 0 && top == 0 && bottom == 0); }
 		CRect MulDiv(int nMult, int nDiv) const		{ return CRect ((left * nMult) / nDiv, (top * nMult) / nDiv,
@@ -173,8 +202,8 @@ namespace Win32xx
 		BOOL SetRect(int l, int t, int r, int b)	{ return ::SetRect(this, l, t, r, b); }
 		BOOL SetRect(POINT TopLeft, POINT BtmRight)	{ return ::SetRect(this, TopLeft.x, TopLeft.y, BtmRight.x, BtmRight.y); }
 		BOOL SetRectEmpty()							{ return ::SetRectEmpty(this); }
-		BOOL SubtractRect(RECT rc1, RECT rc2)		{ return ::SubtractRect(this, &rc1, &rc2); }
-		BOOL UnionRect(RECT rc1, RECT rc2)			{ return ::UnionRect(this, &rc1, &rc2); }
+		BOOL SubtractRect(LPCRECT prc1, LPCRECT prc2)	{ return ::SubtractRect(this, prc1, prc2); }
+		BOOL UnionRect(LPCRECT prc1, LPCRECT prc2)	{ return ::UnionRect(this, prc1, prc2); }
 
 		// Reposition rectangle
 		void MoveToX (int x)						{ right = Width() + x; left = x; }
@@ -192,37 +221,38 @@ namespace Win32xx
 
 		// operators
 		operator LPRECT()							{ return this; }
-		BOOL operator == (RECT rc) const			{ return ::EqualRect(this, &rc); }
-		BOOL operator != (RECT rc) const			{ return !::EqualRect(this, &rc); }
+		operator LPCRECT() const					{ return this; }
+		BOOL operator == (const RECT& rc) const		{ return ::EqualRect(this, &rc); }
+		BOOL operator != (const RECT& rc) const		{ return !::EqualRect(this, &rc); }
 		void operator += (POINT pt)					{ ::OffsetRect(this, pt.x, pt.y); }
 		void operator += (SIZE size)				{ ::OffsetRect(this, size.cx, size.cy); }
-		void operator += (RECT rc)					{ ::InflateRect(this, rc.right - rc.left, rc.bottom - rc.top); }
-		void operator -= (RECT rc)					{ ::InflateRect(this, rc.left - rc.right, rc.top - rc.bottom); }
+		void operator += (LPCRECT prc)				{ ::InflateRect(this, prc->right - prc->left, prc->bottom - prc->top); }
+		void operator -= (LPCRECT prc)				{ ::InflateRect(this, prc->left - prc->right, prc->top - prc->bottom); }
 		void operator -= (POINT pt)					{ ::OffsetRect(this, -pt.x, -pt.y); }
 		void operator -= (SIZE sz)					{ ::OffsetRect(this, -sz.cx, -sz.cy); }
-		void operator &= (RECT rc)					{ ::IntersectRect(this, this, &rc); }
-		void operator |= (RECT rc)					{ ::UnionRect(this, this, &rc); }
+		void operator &= (const RECT& rc)			{ ::IntersectRect(this, this, &rc); }
+		void operator |= (const RECT& rc)			{ ::UnionRect(this, this, &rc); }
 
 		// Operators returning CRect
 		CRect operator + (POINT pt) const			{ CRect rc(*this); ::OffsetRect(&rc, pt.x, pt.y); return rc; }
 		CRect operator - (POINT pt) const			{ CRect rc(*this); ::OffsetRect(&rc, -pt.x, -pt.y); return rc; }
 		CRect operator + (SIZE sz) const			{ CRect rc(*this); ::OffsetRect(&rc, sz.cx, sz.cy); return rc; }
 		CRect operator - (SIZE sz) const			{ CRect rc(*this); ::OffsetRect(&rc, -sz.cx, -sz.cy); return rc; }
-		CRect operator + (RECT rc) const			{ CRect rc1(*this); rc1.InflateRect(rc); return rc1; }
-		CRect operator - (RECT rc) const			{ CRect rc1(*this); rc1.DeflateRect(rc); return rc1; }
-		CRect operator & (RECT rc) const			{ CRect rc1; ::IntersectRect(&rc1, this, &rc); return rc1; }
-		CRect operator | (RECT rc) const			{ CRect rc1; ::UnionRect(&rc1, this, &rc); return rc1; }
+		CRect operator + (LPRECT prc) const			{ CRect rc1(*this); rc1.InflateRect(prc); return rc1; }
+		CRect operator - (LPRECT prc) const			{ CRect rc1(*this); rc1.DeflateRect(prc); return rc1; }
+		CRect operator & (const RECT& rc) const		{ CRect rc1; ::IntersectRect(&rc1, this, &rc); return rc1; }
+		CRect operator | (const RECT& rc) const		{ CRect rc1; ::UnionRect(&rc1, this, &rc); return rc1; }
 	};
 
 	// CSize member function definitions
 	inline CPoint CSize::operator + (POINT pt) const	{ return CPoint(pt) + *this; }
 	inline CPoint CSize::operator - (POINT pt) const	{ return CPoint(pt) - *this; }
-	inline CRect CSize::operator + (RECT rc) const		{ return CRect(rc) + *this; }
-	inline CRect CSize::operator - (RECT rc) const		{ return CRect(rc) - *this; }
+	inline CRect CSize::operator + (LPCRECT prc) const		{ return CRect(*prc) + *this; }
+	inline CRect CSize::operator - (LPCRECT prc) const		{ return CRect(*prc) - *this; }
 
 	// CPoint member function definitions
-	inline CRect CPoint::operator + (RECT rc) const		{ return CRect(rc) + *this; }
-	inline CRect CPoint::operator - (RECT rc) const		{ return CRect(rc) - *this; }
+	inline CRect CPoint::operator + (LPCRECT prc) const		{ return CRect(*prc) + *this; }
+	inline CRect CPoint::operator - (LPCRECT prc) const		{ return CRect(*prc) - *this; }
 
 
 	////////////////////////////////////////////////////////
@@ -296,16 +326,16 @@ namespace Win32xx
 	class CA2W
 	{
 	public:
-		CA2W(LPCSTR pStr) : m_pStr(pStr)
+		CA2W(LPCSTR pStr, UINT codePage = CP_ACP) : m_pStr(pStr)
 		{
 			if (pStr)
 			{
 				// Resize the vector and assign null WCHAR to each element
-				int length = (int)strlen(pStr)+1;
+				int length = MultiByteToWideChar(codePage, 0, pStr, -1, NULL, 0) + 1;
 				m_vWideArray.assign(length, L'\0');
 
 				// Fill our vector with the converted WCHAR array
-				MultiByteToWideChar(CP_ACP, 0, pStr, -1, &m_vWideArray[0], length);
+				MultiByteToWideChar(codePage, 0, pStr, -1, &m_vWideArray[0], length);
 			}
 		}
 		~CA2W() {}
@@ -322,17 +352,26 @@ namespace Win32xx
 	class CW2A
 	{
 	public:
-		CW2A(LPCWSTR pWStr) : m_pWStr(pWStr)
+		CW2A(LPCWSTR pWStr, UINT codePage = CP_ACP) : m_pWStr(pWStr)
+		// Usage:
+		//   CW2A ansiString(L"Some Text");
+		//   CW2A utf8String(L"Some Text", CP_UTF8);
+		//
+		// or
+		//   SetWindowTextA( W2A(L"Some Text") ); The ANSI version of SetWindowText
 		{
 			// Resize the vector and assign null char to each element
-			int length = (int)wcslen(pWStr)+1;
+			int length = WideCharToMultiByte(codePage, 0, pWStr, -1, NULL, 0, NULL, NULL) + 1;
 			m_vAnsiArray.assign(length, '\0');
 
 			// Fill our vector with the converted char array
-			WideCharToMultiByte(CP_ACP, 0, pWStr, -1, &m_vAnsiArray[0], length, NULL,NULL);
+			WideCharToMultiByte(codePage, 0, pWStr, -1, &m_vAnsiArray[0], length, NULL,NULL);
 		}
 
-		~CW2A() {}
+		~CW2A() 
+		{
+			m_pWStr = 0;
+		}
 		operator LPCSTR() { return m_pWStr? &m_vAnsiArray[0] : NULL; }
 
 	private:
@@ -346,8 +385,8 @@ namespace Win32xx
 	{
 	public:
 		CW2W(LPCWSTR pWStr) : m_pWStr(pWStr) {}
-		operator LPCWSTR() { return (LPWSTR)m_pWStr; }
-		operator LPOLESTR() { return (LPOLESTR)m_pWStr; }
+		operator LPCWSTR() { return const_cast<LPWSTR>(m_pWStr); }
+		operator LPOLESTR() { return const_cast<LPOLESTR>(m_pWStr); }
 
 	private:
 		CW2W(const CW2W&);
@@ -395,31 +434,65 @@ namespace Win32xx
 		BSTR m_bstrString;
 	};
 
+	////////////////////////////////////////////////
+	// Declarations of structures for themes
+	//
+
+	// Defines the theme colors for the MenuBar and popup menues.
+	// The popup menu colors are replaced by the Aero theme if available (Vista and above)
+	struct MenuTheme
+	{
+		BOOL UseThemes;			// TRUE if themes are used
+		COLORREF clrHot1;		// Colour 1 for top menu. Color of selected menu item
+		COLORREF clrHot2;		// Colour 2 for top menu. Color of checkbox
+		COLORREF clrPressed1;	// Colour 1 for pressed top menu and side bar
+		COLORREF clrPressed2;	// Colour 2 for pressed top menu and side bar
+		COLORREF clrOutline;	// Colour for border outline
+	};
+
+	// Defines the theme colors and options for the ReBar
+	struct ReBarTheme
+	{
+		BOOL UseThemes;			// TRUE if themes are used
+		COLORREF clrBkgnd1;		// Colour 1 for rebar background
+		COLORREF clrBkgnd2;		// Colour 2 for rebar background
+		COLORREF clrBand1;		// Colour 1 for rebar band background. Use NULL if not required
+		COLORREF clrBand2;		// Colour 2 for rebar band background. Use NULL if not required
+		BOOL FlatStyle;			// Bands are rendered with flat rather than raised style
+		BOOL BandsLeft;			// Position bands left on rearrange
+		BOOL LockMenuBand;		// Lock MenuBar's band in dedicated top row, without gripper
+		BOOL RoundBorders;		// Use rounded band borders
+		BOOL ShortBands;        // Allows bands to be shorter than maximum available width
+		BOOL UseLines;			// Displays horizontal lines between bands
+	};
+
+	// Defines the theme colors and options for the StatusBar
+	struct StatusBarTheme
+	{
+		BOOL UseThemes;			// TRUE if themes are used
+		COLORREF clrBkgnd1;		// Colour 1 for statusbar background
+		COLORREF clrBkgnd2;		// Colour 2 for statusbar background
+	};
+
+	// Defines the theme colors for the ToolBar
+	struct ToolBarTheme
+	{
+		BOOL UseThemes;			// TRUE if themes are used
+		COLORREF clrHot1;		// Colour 1 for hot button
+		COLORREF clrHot2;		// Colour 2 for hot button
+		COLORREF clrPressed1;	// Colour 1 for pressed button
+		COLORREF clrPressed2;	// Colour 2 for pressed button
+		COLORREF clrOutline;	// Colour for border outline
+	};
 
 	////////////////////////////////////////
 	// Global Functions
 	//
 
-	inline CWnd* FromHandle(HWND hWnd)
-	// Returns the CWnd object associated with the window handle
+	inline CWinApp& GetApp()
+	// Returns a reference to the CWinApp derived class
 	{
-		assert( GetApp() );
-		CWnd* pWnd = hWnd? GetApp()->GetCWndFromMap(hWnd) : 0;
-		if ( hWnd != NULL && pWnd == 0 )
-		{
-			GetApp()->AddTmpWnd(hWnd);
-			pWnd = GetApp()->GetCWndFromMap(hWnd);
-			::PostMessage(hWnd, UWM_CLEANUPTEMPS, 0, 0);
-		}
-
-		return pWnd;
-	}
-
-	
-	inline CWinApp* GetApp()
-	// Returns a pointer to the CWinApp derrived class
-	{
-		return CWinApp::SetnGetThis();
+		return *CWinApp::SetnGetThis();
 	}
 
 	inline CPoint GetCursorPos()
@@ -429,29 +502,26 @@ namespace Win32xx
 		return pt;
 	}
 
-	inline HBITMAP LoadBitmap (LPCTSTR lpszName)
-	{
-		assert(GetApp());
-
-		HBITMAP hBitmap = (HBITMAP)::LoadImage (GetApp()->GetResourceHandle(), lpszName, IMAGE_BITMAP, 0, 0, LR_DEFAULTCOLOR);
-		return hBitmap;
-	}
-
-	inline HBITMAP LoadBitmap (int nID)
-	{
-		return LoadBitmap(MAKEINTRESOURCE(nID));
-	}
-
-
-	inline void TRACE(LPCTSTR str)
+	inline void TRACE(LPCSTR str)
 	// TRACE sends a string to the debug/output pane, or an external debugger
 	{
-  #ifdef _DEBUG
-		OutputDebugString(str);
+  #ifndef NDEBUG
+		OutputDebugString(A2T(str));
   #else
 		UNREFERENCED_PARAMETER(str); // no-op
   #endif
 	}
+
+	inline void TRACE(LPCWSTR str)
+	// TRACE sends a string to the debug/output pane, or an external debugger
+	{
+  #ifndef NDEBUG
+		OutputDebugString(W2T(str));
+  #else
+		UNREFERENCED_PARAMETER(str); // no-op
+  #endif
+	}
+
 
   #ifndef _WIN32_WCE		// for Win32/64 operating systems, not WinCE
 
@@ -481,8 +551,8 @@ namespace Win32xx
 	inline int GetComCtlVersion()
 	{
 		// Load the Common Controls DLL
-		HMODULE hComCtl = ::LoadLibraryA("COMCTL32.DLL");
-		if (!hComCtl)
+		HMODULE hComCtl = ::LoadLibrary(_T("COMCTL32.DLL"));
+		if (hComCtl == 0)
 			return 0;
 
 		int ComCtlVer = 400;
@@ -497,7 +567,7 @@ namespace Win32xx
 				typedef HRESULT CALLBACK DLLGETVERSION(DLLVERSIONINFO*);
 				DLLGETVERSION* pfnDLLGetVersion = NULL;
 
-				pfnDLLGetVersion = (DLLGETVERSION*)::GetProcAddress(hComCtl, "DllGetVersion");
+				pfnDLLGetVersion = reinterpret_cast<DLLGETVERSION*>(::GetProcAddress(hComCtl, "DllGetVersion"));
 				if(pfnDLLGetVersion)
 				{
 					DLLVERSIONINFO dvi;
@@ -533,28 +603,27 @@ namespace Win32xx
 
 	inline UINT GetSizeofMenuItemInfo()
 	{
-		UINT uSize = sizeof(MENUITEMINFO);
 		// For Win95 and NT, cbSize needs to be 44
 		if (1400 == (GetWinVersion()) || (2400 == GetWinVersion()))
-			uSize = 44;
+			return CCSIZEOF_STRUCT(MENUITEMINFO, cch);
 
-		return uSize;
+		return sizeof(MENUITEMINFO);
 	}
 
 	inline UINT GetSizeofNonClientMetrics()
 	{
 		// This function correctly determines the sizeof NONCLIENTMETRICS
-		UINT uSize = sizeof (NONCLIENTMETRICS);
 
   #if (WINVER >= 0x0600)
-		if (GetWinVersion() < 2600 && (uSize > 500))	// Is OS version less than Vista
-			uSize -= sizeof(int);		// Adjust size back to correct value
+		// Is OS version less than Vista, adjust size to correct value
+		if (GetWinVersion() < 2600)
+			return CCSIZEOF_STRUCT(NONCLIENTMETRICS, lfMessageFont);
   #endif
 
-		return uSize;
+		return sizeof(NONCLIENTMETRICS);
 	}
 
-	
+
 
 	// A global function to report the state of the left mouse button
 	inline BOOL IsLeftButtonDown()
@@ -573,13 +642,14 @@ namespace Win32xx
 
 	inline BOOL IsAeroThemed()
 	{
-		BOOL bIsAeroThemed = FALSE;
+		BOOL IsAeroThemed = FALSE;
 
 		// Test if Windows version is XP or greater
 		if (GetWinVersion() >= 2501)
 		{
 			HMODULE hMod = ::LoadLibrary(_T("uxtheme.dll"));
-			if(hMod)
+
+			if(hMod != 0)
 			{
 				// Declare pointers to IsCompositionActive function
 				FARPROC pIsCompositionActive = ::GetProcAddress(hMod, "IsCompositionActive");
@@ -588,25 +658,25 @@ namespace Win32xx
 				{
 					if(pIsCompositionActive())
 					{
-						bIsAeroThemed = TRUE;
+						IsAeroThemed = TRUE;
 					}
 				}
 				::FreeLibrary(hMod);
 			}
 		}
 
-		return bIsAeroThemed;
+		return IsAeroThemed;
 	}
 
 	inline BOOL IsXPThemed()
 	{
-		BOOL bIsXPThemed = FALSE;
+		BOOL IsXPThemed = FALSE;
 
 		// Test if Windows version is XP or greater
 		if (GetWinVersion() >= 2501)
 		{
 			HMODULE hMod = ::LoadLibrary(_T("uxtheme.dll"));
-			if(hMod)
+			if(hMod != 0)
 			{
 				// Declare pointers to functions
 				FARPROC pIsAppThemed   = ::GetProcAddress(hMod, "IsAppThemed");
@@ -617,17 +687,69 @@ namespace Win32xx
 					if(pIsAppThemed() && pIsThemeActive())
 					{
 						// Test if ComCtl32 dll used is version 6 or later
-						bIsXPThemed = (GetComCtlVersion() >= 600);
+						IsXPThemed = (GetComCtlVersion() >= 600);
 					}
 				}
 				::FreeLibrary(hMod);
 			}
 		}
 
-		return bIsXPThemed;
+		return IsXPThemed;
 	}
 
   #endif // #ifndef _WIN32_WCE
+
+	inline void LoadCommonControls()
+	// Loads the common controls using InitCommonControlsEx or InitCommonControls.
+	// Returns TRUE of InitCommonControlsEx is used.
+	{
+		// Load the Common Controls DLL
+		HMODULE hComCtl = ::LoadLibrary(_T("COMCTL32.DLL"));
+		if (hComCtl == 0)
+			hComCtl = ::LoadLibrary(_T("COMMCTRL.DLL"));
+
+		if (hComCtl)
+		{
+			// Declare a typedef for the InItCommonControlsEx function
+			typedef BOOL WINAPI INIT_EX(INITCOMMONCONTROLSEX*);
+
+  #ifdef _WIN32_WCE
+			INIT_EX* pfnInitEx = (INIT_EX*)::GetProcAddress(hComCtl, _T("InitCommonControlsEx"));
+  #else
+			INIT_EX* pfnInitEx = (INIT_EX*)::GetProcAddress(hComCtl, "InitCommonControlsEx");
+  #endif
+
+			if (pfnInitEx)
+			{
+				// Load the full set of common controls
+				INITCOMMONCONTROLSEX InitStruct;
+				InitStruct.dwSize = sizeof(INITCOMMONCONTROLSEX);
+				InitStruct.dwICC = ICC_WIN95_CLASSES|ICC_BAR_CLASSES|ICC_COOL_CLASSES|ICC_DATE_CLASSES;
+
+
+  #ifndef _WIN32_WCE
+				if (GetComCtlVersion() > 470)
+				{
+					InitStruct.dwICC |= ICC_INTERNET_CLASSES|ICC_NATIVEFNTCTL_CLASS|ICC_PAGESCROLLER_CLASS|ICC_USEREX_CLASSES;
+				}
+  #endif
+  
+				// Call InitCommonControlsEx
+				if ( !((*pfnInitEx)(&InitStruct)) )
+				{
+					InitCommonControls();
+				}
+
+			}
+			else
+			{
+				// InitCommonControlsEx not supported. Use older InitCommonControls
+				InitCommonControls();
+			}
+
+			::FreeLibrary(hComCtl);
+		}
+	}
 
   // Required for WinCE
   #ifndef lstrcpyn

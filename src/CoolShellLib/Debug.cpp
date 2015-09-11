@@ -14,9 +14,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/.
 
 #include "stdafx.h"
-#include "debug.h"
-
-#include <sstream>
+#include "Debug.h"
 
 #ifndef MAX_TRACE_LEN
 #define MAX_TRACE_LEN 4096
@@ -45,18 +43,6 @@ void _traceW(LPCWSTR format, ...)
 
     ::OutputDebugStringW(text);
     std::wcout << text;
-}
-
-void _trace_stream(const std::ostringstream& stream)
-{
-    ::OutputDebugStringA(stream.str().c_str());
-    std::cout << stream.str();
-}
-
-void _trace_stream(const std::wostringstream& stream)
-{
-    ::OutputDebugStringW(stream.str().c_str());
-    std::wcout << stream.str();
 }
 
 #endif // _DEBUG

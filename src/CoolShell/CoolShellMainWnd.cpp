@@ -16,7 +16,7 @@
 #include "StdAfx.h"
 #include "CoolShellMainWnd.h"
 
-#include "Win32xx\dialog.h"
+#include "Win32xx\wxx_dialog.h"
 
 #include "CoolShellLib\Console.h"
 #include "CoolShellLib\Logging.h"
@@ -29,13 +29,12 @@
 class CAboutBox : public CDialog
 {
 public:
-    CAboutBox(CWnd* pParent = NULL) :
-        CDialog(IDD_ABOUTBOX, pParent)
-    {
-    }
+    CAboutBox() :
+        CDialog(IDD_ABOUTBOX)
+    {}
 
 protected:
-    virtual BOOL OnInitDialog()
+    BOOL OnInitDialog() override
     {
         auto v = Version::GetFileVersion(COOLSHELL_EXE_NAME);
         SetDlgItemText(IDC_STATIC_VERSION, v.ToString<CString>());
@@ -67,7 +66,7 @@ public:
 
         m_parentWnd.SetForegroundWindow();
         auto pt = GetCursorPos();
-        auto selected = this->TrackPopupMenu(TPM_RETURNCMD | TPM_NONOTIFY, pt.x, pt.y, &m_parentWnd);
+        auto selected = this->TrackPopupMenu(TPM_RETURNCMD | TPM_NONOTIFY, pt.x, pt.y, m_parentWnd.GetHwnd());
 
         switch(selected)
         {
@@ -82,7 +81,7 @@ public:
             break;
         case ID_MENU_ABOUT:
             {
-                CAboutBox dlg(&m_parentWnd);
+                CAboutBox dlg;
                 dlg.DoModal();
             }
             break;
@@ -133,11 +132,12 @@ void CoolShellMainWnd::Setup(IApplication* application)
     m_leftClickManager.WhenDoubleClick([this] { m_application->TogglePause(); } );
 }
 
-HWND CoolShellMainWnd::CreateEx(DWORD dwExStyle, LPCTSTR lpszClassName, LPCTSTR lpszWindowName, DWORD dwStyle, 
-                            int x, int y, int nWidth, int nHeight, CWnd* pParent, CMenu* pMenu, LPVOID lpParam /*= NULL*/)
+HWND CoolShellMainWnd::CreateEx(DWORD dwExStyle, LPCTSTR lpszClassName, LPCTSTR lpszWindowName,
+                                DWORD dwStyle, int x, int y, int nWidth, int nHeight, HWND hWndParent,
+                                HMENU nIDorHMenu, LPVOID lpParam /* = NULL*/)
 {
     dwStyle ^= WS_VISIBLE;
-    return CWnd::CreateEx(dwExStyle, lpszClassName, lpszWindowName, dwStyle, x, y, nWidth, nHeight, pParent, pMenu, lpParam);
+    return CWnd::CreateEx(dwExStyle, lpszClassName, lpszWindowName, dwStyle, x, y, nWidth, nHeight, hWndParent, nIDorHMenu, lpParam);
 }
 
 void CoolShellMainWnd::OnInitialUpdate()
@@ -163,7 +163,7 @@ void CoolShellMainWnd::OnInitialUpdate()
         }
     });
 
-    m_notifyIcon.Create(m_hWnd, ::LoadIcon(GetApp()->GetResourceHandle(), MAKEINTRESOURCE(IDI_COOLSHELL)), COOLSHELL_APPLICATION_NAME);
+    m_notifyIcon.Create(m_hWnd, ::LoadIcon(GetApp().GetResourceHandle(), MAKEINTRESOURCE(IDI_COOLSHELL)), COOLSHELL_APPLICATION_NAME);
 }
 
 LRESULT CoolShellMainWnd::WndProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -184,6 +184,6 @@ LRESULT CoolShellMainWnd::WndProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 void CoolShellMainWnd::ReflectPausedState( bool isPaused )
 {
-    auto hIcon = ::LoadIcon(GetApp()->GetResourceHandle(), MAKEINTRESOURCE(isPaused ? IDI_COOLSHELL_DISABLED : IDI_COOLSHELL));
+    auto hIcon = ::LoadIcon(GetApp().GetResourceHandle(), MAKEINTRESOURCE(isPaused ? IDI_COOLSHELL_DISABLED : IDI_COOLSHELL));
     m_notifyIcon.SetIcon(hIcon);
 }

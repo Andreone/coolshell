@@ -27,9 +27,9 @@ public:
     void Setup(IApplication* application);
     void ReflectPausedState(bool isPaused);
 
-    HWND CreateEx(DWORD dwExStyle, LPCTSTR lpszClassName, LPCTSTR lpszWindowName, 
-        DWORD dwStyle, int x, int y, int nWidth, int nHeight, 
-        CWnd* pParent, CMenu* pMenu, LPVOID lpParam = NULL) override;
+    HWND CreateEx(DWORD dwExStyle, LPCTSTR lpszClassName, LPCTSTR lpszWindowName,
+                  DWORD dwStyle, int x, int y, int nWidth, int nHeight, HWND hWndParent,
+                  HMENU nIDorHMenu, LPVOID lpParam = NULL) override;
         
 protected:
     void OnInitialUpdate() override;

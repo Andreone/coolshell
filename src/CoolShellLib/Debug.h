@@ -25,16 +25,11 @@
  *      Sends text to the debug output window a la printf
  *      Example:
  *      TRACE("state=%d\n", state);
- *  - STRACE
- *      Sends text to the debug output window a la std stream
- *      Example:
- *      STRACE("state=" << state);
  *  - INFO
  *      Same as TRACE, but prepends the output with the file name and the line number.
  *      Example:
  *      INFO("state=%d", state);
  *  - ASSERT
- *  - VERIFY
  *  - BREAK
  *      Forces a program to break for debug builds.
  *      Example:
@@ -50,7 +45,7 @@
  */
 
 /**
- * TRACE, ASSERT, VERIFY, DEBUG_ONLY macros
+ * TRACE, ASSERT, DEBUG_ONLY macros
  */
 
 // take care of MFCs because it already defines TRACE, ASSERT & VERIFY
@@ -68,7 +63,6 @@
 
     #define TRACE           _trace
     #define ASSERT(x)       assert(x);
-    #define VERIFY(f)       ASSERT(f)
     #define DEBUG_ONLY(f)   (f)
 #else // !_DEBUG
 
@@ -82,34 +76,11 @@
 
     #define TRACE           1 ? ((void)0) : _trace
     #define ASSERT(x)       ((void)0)
-    #define VERIFY(f)       ((void)(f))
     #define DEBUG_ONLY(f)   ((void)0)
 #endif // _DEBUG
 
 #endif // _MFC_VER
 
-/**
- * STRACE macro
- */
-#ifdef _DEBUG
-
-    void _trace_stream(const std::ostringstream&);
-    void _trace_stream(const std::wostringstream&);
-
-    #if _UNICODE
-        #define STRACE(x) { std::wostringstream os; os << x << std::endl; _trace_wstream(os); }
-    #else
-        #define STRACE(x) { std::ostringstream os; os << x << std::endl; _trace_stream(os); }
-    #endif
-
-#else // !_DEBUG
-
-    inline void _trace_stream(const std::ostringstream&) { }
-    inline void _trace_wstream(const std::wostringstream&) { }
-
-    #define STRACE(x) 
-
-#endif // _DEBUG
 
 /**
  * BREAK, BREAK_IF, INFO

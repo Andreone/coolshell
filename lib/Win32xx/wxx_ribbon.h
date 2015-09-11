@@ -1,12 +1,12 @@
-// Win32++   Version 7.3
-// Released: 30th November 2011
+// Win32++   Version 8.0.1
+// Release Date: 28th July 2015
 //
 //      David Nash
 //      email: dnash@bigpond.net.au
 //      url: https://sourceforge.net/projects/win32-framework
 //
 //
-// Copyright (c) 2005-2011  David Nash
+// Copyright (c) 2005-2015  David Nash
 //
 // Permission is hereby granted, free of charge, to
 // any person obtaining a copy of this software and
@@ -36,7 +36,7 @@
 
 
 ///////////////////////////////////////////////////////
-// ribbon.h
+// wxx_ribbon.h
 //  Declaration of the following classes:
 //  CRibbon and CRibbonFrame
 //
@@ -48,7 +48,6 @@
 // Notes: 1) The Windows 7 SDK must be installed and its directories added to the IDE
 //        2) The ribbon only works on OS Windows 7 and above
 
-//#include <strsafe.h>
 #include <UIRibbon.h>					// Contained within the Windows 7 SDK	
 #include <UIRibbonPropertyHelpers.h>
 
@@ -83,9 +82,10 @@ namespace Win32xx
 		STDMETHODIMP UpdateProperty(UINT nCmdID, __in REFPROPERTYKEY key, __in_opt const PROPVARIANT* ppropvarCurrentValue, 
 												 __out PROPVARIANT* ppropvarNewValue);	
 		
-		bool virtual CreateRibbon(CWnd* pWnd);
+		bool virtual CreateRibbon(HWND hWnd);
 		void virtual DestroyRibbon();
-		IUIFramework* GetRibbonFramework() { return m_pRibbonFramework; }
+		IUIFramework* GetRibbonFramework() const { return m_pRibbonFramework; }
+		UINT GetRibbonHeight() const;
 
 	private:
 		IUIFramework* m_pRibbonFramework;
@@ -120,21 +120,17 @@ namespace Win32xx
 
 		typedef Shared_Ptr<CRecentFiles> RecentFilesPtr;
 
-		CRibbonFrame() : m_uRibbonHeight(0) {}
+		CRibbonFrame() {}
 		virtual ~CRibbonFrame() {}
 		virtual CRect GetViewRect() const;
-		virtual void OnCreate();
+		virtual int  OnCreate(LPCREATESTRUCT pcs);
 		virtual void OnDestroy();
 		virtual STDMETHODIMP OnViewChanged(UINT32 viewId, UI_VIEWTYPE typeId, IUnknown* pView, UI_VIEWVERB verb, INT32 uReasonCode);
 		virtual HRESULT PopulateRibbonRecentItems(__deref_out PROPVARIANT* pvarValue);
 		virtual void UpdateMRUMenu();
 		
-		UINT GetRibbonHeight() const { return m_uRibbonHeight; }
-
 	private:
 		std::vector<RecentFilesPtr> m_vRecentFiles;
-		void SetRibbonHeight(UINT uRibbonHeight) { m_uRibbonHeight = uRibbonHeight; }
-		UINT m_uRibbonHeight;
 	};
 
 }
@@ -226,7 +222,6 @@ namespace Win32xx
 		UNREFERENCED_PARAMETER(verb);
 		UNREFERENCED_PARAMETER(uReasonCode);
 
-
 		return E_NOTIMPL;
 	}
 
@@ -253,7 +248,7 @@ namespace Win32xx
 		return E_NOTIMPL;
 	}
 
-	inline bool CRibbon::CreateRibbon(CWnd* pWnd)
+	inline bool CRibbon::CreateRibbon(HWND hWnd)
 	{	
 		::CoInitialize(NULL);
 
@@ -261,7 +256,9 @@ namespace Win32xx
 		::CoCreateInstance(CLSID_UIRibbonFramework, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&m_pRibbonFramework));
 
 		// Connect the host application to the Ribbon framework.
-		HRESULT hr = m_pRibbonFramework->Initialize(pWnd->GetHwnd(), this);
+
+		assert(m_pRibbonFramework);
+		HRESULT hr = m_pRibbonFramework->Initialize(hWnd, this);
 		if (FAILED(hr))
 		{
 			return false;
@@ -286,6 +283,26 @@ namespace Win32xx
 			m_pRibbonFramework = NULL;
 		}
 	}
+
+	inline UINT CRibbon::GetRibbonHeight() const
+	{
+		HRESULT hr = E_FAIL;
+		IUIRibbon* pRibbon = NULL;
+		UINT uRibbonHeight = 0;
+
+		if (GetRibbonFramework())
+		{
+			hr = GetRibbonFramework()->GetView(0, IID_PPV_ARGS(&pRibbon));
+			if (SUCCEEDED(hr))
+			{
+				// Call to the framework to determine the desired height of the Ribbon.
+				hr = pRibbon->GetHeight(&uRibbonHeight);
+				pRibbon->Release();
+			}
+		}
+
+		return uRibbonHeight;
+	}
 	
 	
 	//////////////////////////////////////////////
@@ -295,34 +312,23 @@ namespace Win32xx
 	inline CRect CRibbonFrame::GetViewRect() const
 	{
 		// Get the frame's client area
-		CRect rcFrame = GetClientRect();
+		CRect rcClient = GetClientRect();
 
-		// Get the statusbar's window area
-		CRect rcStatus;
-		if (GetStatusBar().IsWindowVisible() || !IsWindowVisible())
-			rcStatus = GetStatusBar().GetWindowRect();
+		rcClient.top += GetRibbonHeight();
 
-		// Get the top rebar or toolbar's window area
-		CRect rcTop;
-		if (IsReBarSupported() && m_bUseReBar)
-			rcTop = GetReBar().GetWindowRect();
+		if (GetStatusBar().IsWindow() && GetStatusBar().IsWindowVisible())
+			rcClient = ExcludeChildRect(rcClient, GetStatusBar());
+
+		if (GetReBar().IsWindow() && GetReBar().IsWindowVisible())
+			rcClient = ExcludeChildRect(rcClient, GetReBar());
 		else
-			if (m_bUseToolBar && GetToolBar().IsWindowVisible())
-				rcTop = GetToolBar().GetWindowRect();
+			if (GetToolBar().IsWindow() && GetToolBar().IsWindowVisible())
+				rcClient = ExcludeChildRect(rcClient, GetToolBar());
 
-		// Return client size less the rebar and status windows
-		int top = rcFrame.top + rcTop.Height() + m_uRibbonHeight;
-		int left = rcFrame.left;
-		int right = rcFrame.right;
-		int bottom = rcFrame.Height() - (rcStatus.Height());
-		if ((bottom <= top) ||( right <= left))
-			top = left = right = bottom = 0;
-
-		CRect rcView(left, top, right, bottom);
-		return rcView;
+		return rcClient;
 	}
 
-	inline void CRibbonFrame::OnCreate()
+	inline int CRibbonFrame::OnCreate(LPCREATESTRUCT pcs)
 	{
 		// OnCreate is called automatically during window creation when a
 		// WM_CREATE message received.
@@ -330,22 +336,26 @@ namespace Win32xx
 		// Tasks such as setting the icon, creating child windows, or anything
 		// associated with creating windows are normally performed here.
 
-		if (GetWinVersion() >= 2601)	// WinVersion >= Windows 7
-		{		
-			m_bUseReBar = FALSE;			// Don't use rebars
-			m_bUseToolBar = FALSE;			// Don't use a toolbar
-			
-			CFrame::OnCreate();
+		UNREFERENCED_PARAMETER(pcs);
 
-			if (CreateRibbon(this))
-				TRACE(_T("Ribbon Created Succesfully\n"));
-			else
-				throw CWinException(_T("Failed to create ribbon"));
+		if (GetWinVersion() >= 2601)	// WinVersion >= Windows 7
+		{	
+			if (CreateRibbon(*this))
+			{
+				SetUseReBar(FALSE);			// Don't use a ReBar
+				SetUseToolBar(FALSE);		// Don't use a ToolBar
+
+				CFrame::OnCreate(pcs);
+				SetMenu(NULL);
+				ShowStatusBar(TRUE);
+			}		
 		}
 		else 
 		{
-			CFrame::OnCreate();
+			CFrame::OnCreate(pcs);
 		}
+
+		return 0;
 	}
 
 	inline void CRibbonFrame::OnDestroy()
@@ -357,6 +367,7 @@ namespace Win32xx
 	inline STDMETHODIMP CRibbonFrame::OnViewChanged(UINT32 viewId, UI_VIEWTYPE typeId, IUnknown* pView, UI_VIEWVERB verb, INT32 uReasonCode)
 	{
 		UNREFERENCED_PARAMETER(viewId);
+		UNREFERENCED_PARAMETER(pView);
 		UNREFERENCED_PARAMETER(uReasonCode);
 
 		HRESULT hr = E_NOTIMPL;
@@ -365,34 +376,14 @@ namespace Win32xx
 		if (UI_VIEWTYPE_RIBBON == typeId)
 		{
 			switch (verb)
-			{           
-				// The view was newly created.
-			case UI_VIEWVERB_CREATE:
+			{           			
+			case UI_VIEWVERB_CREATE:	// The view was newly created.
 				hr = S_OK;
 				break;
-
-				// The view has been resized.  For the Ribbon view, the application should
-				// call GetHeight to determine the height of the ribbon.
-			case UI_VIEWVERB_SIZE:
-				{
-					IUIRibbon* pRibbon = NULL;
-					UINT uRibbonHeight;
-
-					hr = pView->QueryInterface(IID_PPV_ARGS(&pRibbon));
-					if (SUCCEEDED(hr))
-					{
-						// Call to the framework to determine the desired height of the Ribbon.
-						hr = pRibbon->GetHeight(&uRibbonHeight);
-						SetRibbonHeight(uRibbonHeight);
-						pRibbon->Release();
-
-						RecalcLayout();
-						// Use the ribbon height to position controls in the client area of the window.
-					}
-				}
+			case UI_VIEWVERB_SIZE:		// Ribbon size has changed
+				RecalcLayout();
 				break;
-				// The view was destroyed.
-			case UI_VIEWVERB_DESTROY:
+			case UI_VIEWVERB_DESTROY:	// The view was destroyed.
 				hr = S_OK;
 				break;
 			}
@@ -413,7 +404,7 @@ namespace Win32xx
 		
 		if (psa != NULL)
 		{
-			for (iter = FileNames.begin(); iter < FileNames.end(); ++iter)
+			for (iter = FileNames.begin(); iter != FileNames.end(); ++iter)
 			{
 				CString strCurrentFile = (*iter);
 				WCHAR wszCurrentFile[MAX_PATH] = {0L};
@@ -425,7 +416,7 @@ namespace Win32xx
 				++iCurrentFile;
 			}
 
-			SAFEARRAYBOUND sab = {iCurrentFile,0};
+			SAFEARRAYBOUND sab = {(ULONG)iCurrentFile, 0};
 			SafeArrayRedim(psa, &sab);
 			hr = UIInitPropertyFromIUnknownArray(UI_PKEY_RecentItems, psa, pvarValue);
 
@@ -438,7 +429,7 @@ namespace Win32xx
 	inline void CRibbonFrame::UpdateMRUMenu()
 	{
 		// Suppress UpdateMRUMenu when ribbon is used
-		if (0 != GetRibbonFramework()) return;
+		if (GetRibbonFramework() != 0) return;
 
 		CFrame::UpdateMRUMenu();
 	}
@@ -462,7 +453,7 @@ namespace Win32xx
 			{
 				lstrcpynW(m_wszDisplayName, sfi.szDisplayName, MAX_PATH);
 			}
-			else // Provide a reasonable fallback.
+			else // Provide a reasonable fall back.
 			{
 				lstrcpynW(m_wszDisplayName, m_wszFullPath, MAX_PATH);
 			}
