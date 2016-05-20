@@ -1,12 +1,12 @@
-// Win32++   Version 8.0.1
-// Release Date: 28th July 2015
+// Win32++   Version 8.2
+// Release Date: 11th April 2016
 //
 //      David Nash
 //      email: dnash@bigpond.net.au
 //      url: https://sourceforge.net/projects/win32-framework
 //
 //
-// Copyright (c) 2005-2015  David Nash
+// Copyright (c) 2005-2016  David Nash
 //
 // Permission is hereby granted, free of charge, to
 // any person obtaining a copy of this software and
@@ -156,7 +156,7 @@ namespace Win32xx
 		BOOL 	Undo() const;
 
 	protected:
-		void	PreRegisterClass(WNDCLASS &wc);
+		void	PreRegisterClass(WNDCLASS& wc);
 
 	private:
 		HMODULE m_hmodRich;
@@ -185,7 +185,7 @@ namespace Win32xx
 			m_hmodRich = LoadLibrary(_T("riched32.dll"));
 	
 		if (m_hmodRich == 0)
-			::MessageBox(NULL, _T("Failed to load RICHED32.DLL"), _T("Error"), MB_ICONWARNING);
+			throw CNotSupportedException(_T("Failed to load RICHED32.DLL"));
 	}
 
 	inline CRichEdit::~CRichEdit()
@@ -196,7 +196,7 @@ namespace Win32xx
 		FreeLibrary(m_hmodRich);
 	}
 
-	inline void CRichEdit::PreRegisterClass(WNDCLASS &wc)
+	inline void CRichEdit::PreRegisterClass(WNDCLASS& wc)
 	{
 		// Set the Window Class
 		wc.lpszClassName =  RICHEDIT_CLASS;

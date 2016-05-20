@@ -1,12 +1,12 @@
-// Win32++   Version 8.0.1
-// Release Date: 28th July 2015
+// Win32++   Version 8.2
+// Release Date: 11th April 2016
 //
 //      David Nash
 //      email: dnash@bigpond.net.au
 //      url: https://sourceforge.net/projects/win32-framework
 //
 //
-// Copyright (c) 2005-2015  David Nash
+// Copyright (c) 2005-2016  David Nash
 //
 // Permission is hereby granted, free of charge, to
 // any person obtaining a copy of this software and
@@ -52,12 +52,12 @@ namespace Win32xx
 		CStatusBar();
 		virtual ~CStatusBar() {}
 
-	// Overridables
+		// Overridables
 		virtual BOOL OnEraseBkgnd(CDC& dc);
 		virtual void PreCreate(CREATESTRUCT& cs);
-		virtual void PreRegisterClass(WNDCLASS &wc);
+		virtual void PreRegisterClass(WNDCLASS& wc);
 
-	// Attributes
+		// Attributes
 		int GetParts();
 
 		CRect GetPartRect(int iPart);
@@ -65,14 +65,10 @@ namespace Win32xx
 		BOOL IsSimple();
 		BOOL SetPartText(int iPart, LPCTSTR szText, UINT Style = 0) const;
 		BOOL SetPartWidth(int iPart, int iWidth) const;
-
-#if (_WIN32_IE >= 0x0400)
 		HICON GetPartIcon(int iPart);
 		BOOL SetPartIcon(int iPart, HICON hIcon);
-#endif
 
-
-	// Operations
+		// Operations
 		CStatusBar(const CStatusBar&);				// Disable copy construction
 		CStatusBar& operator = (const CStatusBar&); // Disable assignment operator
 
@@ -113,13 +109,11 @@ namespace Win32xx
 		return static_cast<int>(SendMessage(SB_GETPARTS, 0L, 0L));
 	}
 
-#if (_WIN32_IE >= 0x0400)
 	inline HICON CStatusBar::GetPartIcon(int iPart)
 	{
 		assert(IsWindow());
 		return reinterpret_cast<HICON>(SendMessage(SB_GETICON, (WPARAM)iPart, 0L));
 	}
-#endif
 
 	inline CRect CStatusBar::GetPartRect(int iPart)
 	{
@@ -154,15 +148,15 @@ namespace Win32xx
 	{
 		// Permit the parent window to handle the drawing of the ReBar's background.
 		// Return TRUE to suppress default background drawing.
-		return (TRUE == GetParent().SendMessage(UWM_DRAWSBBKGND, (WPARAM)&dc, (LPARAM)this));
+		return (TRUE == ::SendMessage(::GetParent(m_hWnd), UWM_DRAWSBBKGND, (WPARAM)&dc, (LPARAM)this));
 	}
 
-	inline void CStatusBar::PreCreate(CREATESTRUCT &cs)
+	inline void CStatusBar::PreCreate(CREATESTRUCT& cs)
 	{
 		cs.style = WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | CCS_BOTTOM | SBARS_SIZEGRIP;
 	}
 
-	inline void CStatusBar::PreRegisterClass(WNDCLASS &wc)
+	inline void CStatusBar::PreRegisterClass(WNDCLASS& wc)
 	{
 		// Set the Window Class
 		wc.lpszClassName =  STATUSCLASSNAME;
@@ -185,13 +179,11 @@ namespace Win32xx
 		return bResult;
 	}
 
-#if (_WIN32_IE >= 0x0400)
 	inline BOOL CStatusBar::SetPartIcon(int iPart, HICON hIcon)
 	{
 		assert(IsWindow());
 		return static_cast<BOOL>(SendMessage(SB_SETICON, (WPARAM)iPart, (LPARAM) hIcon));
 	}
-#endif
 
 	inline BOOL CStatusBar::SetPartWidth(int iPart, int iWidth) const
 	{

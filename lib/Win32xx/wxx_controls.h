@@ -1,12 +1,12 @@
-// Win32++   Version 8.0.1
-// Release Date: 28th July 2015
+// Win32++   Version 8.2
+// Release Date: 11th April 2016
 //
 //      David Nash
 //      email: dnash@bigpond.net.au
 //      url: https://sourceforge.net/projects/win32-framework
 //
 //
-// Copyright (c) 2005-2015  David Nash
+// Copyright (c) 2005-2016  David Nash
 //
 // Permission is hereby granted, free of charge, to
 // any person obtaining a copy of this software and
@@ -46,8 +46,12 @@
 #ifndef _WIN32XX_CONTROLS_H_
 #define _WIN32XX_CONTROLS_H_
 
-#include "wxx_wincore.h"
+
+#include "wxx_wincore0.h"
 #include "wxx_stdcontrols.h"
+#include "wxx_imagelist.h"
+#include "wxx_ddx.h"
+
 
 namespace Win32xx
 {
@@ -70,7 +74,7 @@ namespace Win32xx
 
 	protected:
 		// Overridables
-		virtual void PreRegisterClass(WNDCLASS &wc) { wc.lpszClassName = ANIMATE_CLASS; }
+		virtual void PreRegisterClass(WNDCLASS& wc) { wc.lpszClassName = ANIMATE_CLASS; }
 
 	private:
 		CAnimation(const CAnimation&);				// Disable copy construction
@@ -125,7 +129,7 @@ namespace Win32xx
 
 	protected:
 		// Overridables
-		virtual void PreRegisterClass(WNDCLASS &wc) { wc.lpszClassName = _T("ComboBox"); }
+		virtual void PreRegisterClass(WNDCLASS& wc) { wc.lpszClassName = _T("ComboBox"); }
 
 	private:
 		CComboBox(const CComboBox&);				// Disable copy construction
@@ -148,15 +152,12 @@ namespace Win32xx
 		int     InsertItem(COMBOBOXEXITEM* lpcCBItem) const;
 		CImageList SetImageList(HIMAGELIST himlNew) const;
 		BOOL 	SetItem(PCOMBOBOXEXITEM lpcCBItem) const;
-
-#if (_WIN32_IE >= 0x0400)
 		DWORD 	GetExtendedStyle() const;
 		DWORD 	SetExtendedStyle(DWORD dwExMask, DWORD dwExStyles ) const;
-#endif
 
 	protected:
 		// Overridables
-		virtual void PreRegisterClass(WNDCLASS &wc) { wc.lpszClassName = WC_COMBOBOXEX; }
+		virtual void PreRegisterClass(WNDCLASS& wc) { wc.lpszClassName = WC_COMBOBOXEX; }
 
 	private:
 		CComboBoxEx(const CComboBoxEx&);				// Disable copy construction
@@ -200,7 +201,7 @@ namespace Win32xx
 
 	protected:
 		// Overridables
-		virtual void PreRegisterClass(WNDCLASS &wc) { wc.lpszClassName = WC_HEADER ; }
+		virtual void PreRegisterClass(WNDCLASS& wc) { wc.lpszClassName = WC_HEADER ; }
 
 	private:
 		CHeader(const CHeader&);				// Disable copy construction
@@ -220,14 +221,13 @@ namespace Win32xx
 
 	protected:
 		// Overridables
-		virtual void PreRegisterClass(WNDCLASS &wc) { wc.lpszClassName = HOTKEY_CLASS; }
+		virtual void PreRegisterClass(WNDCLASS& wc) { wc.lpszClassName = HOTKEY_CLASS; }
 
 	private:
 		CHotKey(const CHotKey&);				// Disable copy construction
 		CHotKey& operator = (const CHotKey&);	// Disable assignment operator
 	};
 
-#if (_WIN32_IE >= 0x0400)
 	class CIPAddress : public CWnd
 	{
 	public:
@@ -245,13 +245,12 @@ namespace Win32xx
 
 	protected:
 		// Overridables
-		virtual void PreRegisterClass(WNDCLASS &wc) { wc.lpszClassName = WC_IPADDRESS; }
+		virtual void PreRegisterClass(WNDCLASS& wc) { wc.lpszClassName = WC_IPADDRESS; }
 
 	private:
 		CIPAddress(const CIPAddress&);				// Disable copy construction
 		CIPAddress& operator = (const CIPAddress&);	// Disable assignment operator
 	};
-#endif // (_WIN32_IE >= 0x0400)
 
 	class CMonthCalendar : public CWnd
 	{
@@ -285,7 +284,7 @@ namespace Win32xx
 
 	protected:
 		// Overridables
-		virtual void PreRegisterClass(WNDCLASS &wc) { wc.lpszClassName = MONTHCAL_CLASS; }
+		virtual void PreRegisterClass(WNDCLASS& wc) { wc.lpszClassName = MONTHCAL_CLASS; }
 
 	private:
 		CMonthCalendar(const CMonthCalendar&);				// Disable copy construction
@@ -306,15 +305,12 @@ namespace Win32xx
 		BOOL SetRange(DWORD flags, LPSYSTEMTIME lpSysTimeArray);
 		DWORD GetTime(LPSYSTEMTIME pTimeDest) const;
 		BOOL SetTime(DWORD flag, LPSYSTEMTIME pTimeNew = NULL);
-
-#if (_WIN32_IE >= 0x0400)
 		CFont GetMonthCalFont();
 		void SetMonthCalFont(HFONT hFont, BOOL bRedraw = TRUE);
-#endif
 
 	protected:
 		// Overridables
-		virtual void PreRegisterClass(WNDCLASS &wc) { wc.lpszClassName = DATETIMEPICK_CLASS; }
+		virtual void PreRegisterClass(WNDCLASS& wc) { wc.lpszClassName = DATETIMEPICK_CLASS; }
 
 	private:
 		CDateTime(const CDateTime&);				// Disable copy construction
@@ -337,7 +333,7 @@ namespace Win32xx
 
 	protected:
 		// Overridables
-		virtual void PreRegisterClass(WNDCLASS &wc) { wc.lpszClassName = PROGRESS_CLASS; }
+		virtual void PreRegisterClass(WNDCLASS& wc) { wc.lpszClassName = PROGRESS_CLASS; }
 
 	private:
 		CProgressBar(const CProgressBar&);				// Disable copy construction
@@ -361,7 +357,7 @@ namespace Win32xx
 
 	protected:
 		// Overridables
-		virtual void PreRegisterClass(WNDCLASS &wc) { wc.lpszClassName = _T("SCROLLBAR"); ; }
+		virtual void PreRegisterClass(WNDCLASS& wc) { wc.lpszClassName = _T("SCROLLBAR"); ; }
 
 	private:
 		CScrollBar(const CScrollBar&);				// Disable copy construction
@@ -396,7 +392,7 @@ namespace Win32xx
 		int  SetPageSize(int nSize) const;
 		void SetPos(int nPos, BOOL bRedraw = FALSE) const;
 		void SetRangeMax(int nMax, BOOL bRedraw = FALSE) const;
-		void SetRangeMin(int nMax, BOOL bRedraw = FALSE) const;
+		void SetRangeMin(int nMin, BOOL bRedraw = FALSE) const;
 		void SetSelection(int nMin, int nMax, BOOL bRedraw = FALSE) const;
 		BOOL SetTic(int nTic) const;
 		void SetTicFreq(int nFreq)  const;
@@ -405,7 +401,7 @@ namespace Win32xx
 
 	protected:
 		// Overridables
-		virtual void PreRegisterClass(WNDCLASS &wc) { wc.lpszClassName = TRACKBAR_CLASS; }
+		virtual void PreRegisterClass(WNDCLASS& wc) { wc.lpszClassName = TRACKBAR_CLASS; }
 
 	private:
 		CSlider(const CSlider&);				// Disable copy construction
@@ -433,8 +429,8 @@ namespace Win32xx
 
 	protected:
 		// Overridables
-		virtual void PreCreate(CREATESTRUCT &cs);
-		virtual void PreRegisterClass(WNDCLASS &wc);
+		virtual void PreCreate(CREATESTRUCT& cs);
+		virtual void PreRegisterClass(WNDCLASS& wc);
 
 	private:
 		CSpinButton(const CSpinButton&);				// Disable copy construction
@@ -474,27 +470,26 @@ namespace Win32xx
 		void DelTool(HWND hWnd, UINT_PTR nIDTool = 0);
 		BOOL HitTest(HWND hWnd, CPoint pt, LPTOOLINFO lpToolInfo) const;
 		void Pop();
-		void RelayEvent(LPMSG lpMsg);
+		void RelayEvent(MSG& Msg);
 		void SetToolRect(HWND hWnd, UINT_PTR nIDTool, LPCRECT lpRect);
 		void UpdateTipText(LPCTSTR lpszText, HWND hWnd, UINT_PTR nIDTool = 0);
 		void UpdateTipText(UINT nIDText, HWND hWnd, UINT_PTR nIDTool = 0);
-
-#if (_WIN32_IE >= 0x0400)
 		void Update();
-#endif
 
 #if (_WIN32_IE >=0x0500)
 		BOOL AdjustRect(LPRECT lprc, BOOL bLarger = TRUE);
+  #ifdef TTM_SETTITLE
 		BOOL SetTitle(UINT uIcon, LPCTSTR lpstrTitle);
+  #endif
 #endif
-#if (WINVER >= 0x0501)
+#if (WINVER >= 0x0501) && defined(TTM_SETWINDOWTHEME)
 		void SetWindowTheme(LPCWSTR lpstrTheme);
 #endif
 
 	protected:
 		// Overridables
-		virtual void PreRegisterClass(WNDCLASS &wc) { wc.lpszClassName = TOOLTIPS_CLASS; ; }
-		virtual void PreCreate(CREATESTRUCT &cs)
+		virtual void PreRegisterClass(WNDCLASS& wc) { wc.lpszClassName = TOOLTIPS_CLASS; ; }
+		virtual void PreCreate(CREATESTRUCT& cs)
 		{
 			cs.dwExStyle = WS_EX_TOOLWINDOW;
 			cs.style = WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP;
@@ -864,14 +859,12 @@ namespace Win32xx
 		return reinterpret_cast<HWND>(SendMessage(CBEM_GETEDITCONTROL, 0L, 0L));
 	}
 
-#if (_WIN32_IE >= 0x0400)
 	inline DWORD CComboBoxEx::GetExtendedStyle() const
 	// Retrieves the extended styles that are in use for the ComboBoxEx control.
 	{
 		assert(IsWindow());
 		return static_cast<DWORD>(SendMessage(CBEM_GETEXTENDEDSTYLE, 0L, 0L));
 	}
-#endif
 
 	inline CImageList CComboBoxEx::GetImageList() const
 	// Retrieves the handle to an image list assigned to the ComboBoxEx control.
@@ -902,14 +895,12 @@ namespace Win32xx
 		return static_cast<int>(SendMessage(CBEM_INSERTITEM, 0L, (LPARAM)lpcCBItem));
 	}
 
-#if (_WIN32_IE >= 0x0400)
 	inline DWORD CComboBoxEx::SetExtendedStyle(DWORD dwExMask, DWORD dwExStyles ) const
 	// Sets extended styles within the ComboBoxEx control.
 	{
 		assert(IsWindow());
 		return static_cast<DWORD>(SendMessage(CBEM_SETEXTENDEDSTYLE, (WPARAM)dwExMask, (LPARAM)dwExStyles));
 	}
-#endif
 
 	inline CImageList CComboBoxEx::SetImageList(HIMAGELIST himlNew) const
 	// Sets an image list for the ComboBoxEx control.
@@ -929,7 +920,7 @@ namespace Win32xx
 	////////////////////////////////////////
 	// Definitions for the CDateTime class
 	//
-	inline CDateTime::CDateTime() 
+	inline CDateTime::CDateTime()
 	{
 	}
 
@@ -957,7 +948,6 @@ namespace Win32xx
 		return reinterpret_cast<HWND>(DateTime_GetMonthCal(*this));
 	}
 
-#if (_WIN32_IE >= 0x0400)
 	inline CFont CDateTime::GetMonthCalFont()
 	{
 		assert(IsWindow());
@@ -970,7 +960,6 @@ namespace Win32xx
 		assert(IsWindow());
 		DateTime_SetMonthCalFont(*this, hFont, MAKELONG(bRedraw, 0));
 	}
-#endif
 
 	inline DWORD CDateTime::GetRange(LPSYSTEMTIME lpSysTimeArray) const
 	{
@@ -1184,11 +1173,10 @@ namespace Win32xx
 #endif
 
 
-#if (_WIN32_IE >= 0x0400)
 	////////////////////////////////////////
 	// Definitions for the CIPAddress class
 	//
-	inline CIPAddress::CIPAddress() 
+	inline CIPAddress::CIPAddress()
 	{
 		if (GetComCtlVersion() > 470)
 		{
@@ -1198,12 +1186,10 @@ namespace Win32xx
 			InitStruct.dwICC = ICC_INTERNET_CLASSES;
 			InitCommonControlsEx(&InitStruct);
 		}
-		else
-		{
-			::MessageBox(NULL, _T("IP Address Control not supported!"), _T("Error"), MB_OK);
-		}
+		else 
+			throw CNotSupportedException(_T("IP Address Control not supported!"));
 	}
-	
+
 	inline void CIPAddress::ClearAddress()
 	{
 		assert(IsWindow());
@@ -1256,13 +1242,12 @@ namespace Win32xx
 		assert(IsWindow());
 		SendMessage(IPM_SETRANGE, MAKEIPRANGE(nLower, nUpper), (LPARAM)nField);
 	}
-#endif // (_WIN32_IE >= 0x0400)
 
 
 	///////////////////////////////////////////
 	// Definitions for the CMonthCalendar class
 	//
-	inline CMonthCalendar::CMonthCalendar() 
+	inline CMonthCalendar::CMonthCalendar()
 	{
 	}
 
@@ -1708,11 +1693,11 @@ namespace Win32xx
 		SendMessage(TBM_SETRANGEMAX, (WPARAM)bRedraw, (LPARAM)nMax);
 	}
 
-	inline void CSlider::SetRangeMin(int nMax, BOOL bRedraw) const
+	inline void CSlider::SetRangeMin(int nMin, BOOL bRedraw) const
 	// Sets the minimum logical position for the slider in the trackbar.
 	{
 		assert(IsWindow());
-		SendMessage(TBM_SETRANGEMIN, (WPARAM)bRedraw, (LPARAM)nMax);
+		SendMessage(TBM_SETRANGEMIN, (WPARAM)bRedraw, (LPARAM)nMin);
 	}
 
 	inline void CSlider::SetSelection(int nMin, int nMax, BOOL bRedraw) const
@@ -1788,12 +1773,12 @@ namespace Win32xx
 		return static_cast<DWORD>(SendMessage(UDM_GETRANGE, 0L, 0L));
 	}
 
-	inline void CSpinButton::PreCreate(CREATESTRUCT &cs)
+	inline void CSpinButton::PreCreate(CREATESTRUCT& cs)
     {
 		cs.style = WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VISIBLE |UDS_SETBUDDYINT;
 	}
 
-	inline void CSpinButton::PreRegisterClass(WNDCLASS &wc)
+	inline void CSpinButton::PreRegisterClass(WNDCLASS& wc)
 	{
 		wc.lpszClassName = UPDOWN_CLASS;
 	}
@@ -1984,11 +1969,11 @@ namespace Win32xx
 		SendMessage(TTM_POP, 0L, 0L);
 	}
 
-	inline void CToolTip::RelayEvent(LPMSG lpMsg)
+	inline void CToolTip::RelayEvent(MSG& Msg)
 	// Passes a mouse message to a ToolTip control for processing.
 	{
 		assert(IsWindow());
-		SendMessage(TTM_RELAYEVENT, 0L, (LPARAM)lpMsg);
+		SendMessage(TTM_RELAYEVENT, 0L, (LPARAM)&Msg);
 	}
 
 	inline void CToolTip::SetDelayTime(UINT nDelay)
@@ -2054,14 +2039,12 @@ namespace Win32xx
 		SendMessage(TTM_NEWTOOLRECT, 0L, (LPARAM)&ti);
 	}
 
-#if (_WIN32_IE >= 0x0400)
 	inline void CToolTip::Update()
 	// Forces the current tool to be redrawn.
 	{
 		assert(IsWindow());
 		SendMessage(TTM_UPDATE, 0L, 0L);
 	}
-#endif
 
 	inline void CToolTip::UpdateTipText(LPCTSTR lpszText, HWND hWnd, UINT_PTR nIDTool /*= 0*/)
 	// Sets the ToolTip text for a tool.
@@ -2102,6 +2085,7 @@ namespace Win32xx
 		return sz;
 	}
 
+#ifdef TTM_SETTITLE
 	inline BOOL CToolTip::SetTitle(UINT uIcon, LPCTSTR lpstrTitle)
 	// Adds a standard icon and title string to a ToolTip.
 	{
@@ -2109,8 +2093,9 @@ namespace Win32xx
 		return static_cast<BOOL>(SendMessage(TTM_SETTITLE, (WPARAM)uIcon, (LPARAM)lpstrTitle));
 	}
 #endif
+#endif
 
-#if (WINVER >= 0x0501)
+#if (WINVER >= 0x0501) && defined(TTM_SETWINDOWTHEME)
 	inline void CToolTip::SetWindowTheme(LPCWSTR lpstrTheme)
 	// Sets the visual style of a ToolTip control.
 	{
@@ -2118,6 +2103,7 @@ namespace Win32xx
 		SendMessage(TTM_SETWINDOWTHEME, 0L, (LPARAM)lpstrTheme);
 	}
 #endif
+
 
 
 } // namespace Win32xx

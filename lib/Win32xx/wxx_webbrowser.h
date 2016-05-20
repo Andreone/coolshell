@@ -1,12 +1,12 @@
-// Win32++   Version 8.0.1
-// Release Date: 28th July 2015
+// Win32++   Version 8.2
+// Release Date: 11th April 2016
 //
 //      David Nash
 //      email: dnash@bigpond.net.au
 //      url: https://sourceforge.net/projects/win32-framework
 //
 //
-// Copyright (c) 2005-2015  David Nash
+// Copyright (c) 2005-2016  David Nash
 //
 // Permission is hereby granted, free of charge, to
 // any person obtaining a copy of this software and
@@ -37,9 +37,11 @@
 #ifndef _WIN32XX_WEBBROWSER_H_
 #define _WIN32XX_WEBBROWSER_H_
 
+#include "wxx_appcore0.h"
 #include <exdisp.h>
 #include <ocidl.h>
 #include <shlobj.h>
+
 
 namespace Win32xx
 {
@@ -196,10 +198,13 @@ namespace Win32xx
 		void Stop();
 
 	protected:
+		// Override these as required
 		virtual void OnAttach();
-		virtual int  OnCreate(LPCREATESTRUCT pcs);
+		virtual int  OnCreate(CREATESTRUCT& cs);
 		virtual void OnDestroy();
 		virtual void OnSize(int width, int height);
+		
+		// Not intended to be overridden
 		virtual LRESULT WndProcDefault(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	private:
@@ -761,9 +766,9 @@ namespace Win32xx
 			AddWebBrowserControl();
 	}
 
-	inline int CWebBrowser::OnCreate(LPCREATESTRUCT pcs)
+	inline int CWebBrowser::OnCreate(CREATESTRUCT& cs)
 	{
-		UNREFERENCED_PARAMETER(pcs);
+		UNREFERENCED_PARAMETER(cs);
 		AddWebBrowserControl();
 		return 0;
 	}

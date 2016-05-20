@@ -1,12 +1,12 @@
-// Win32++   Version 8.0.1
-// Release Date: 28th July 2015
+// Win32++   Version 8.2
+// Release Date: 11th April 2016
 //
 //      David Nash
 //      email: dnash@bigpond.net.au
 //      url: https://sourceforge.net/projects/win32-framework
 //
 //
-// Copyright (c) 2005-2015  David Nash
+// Copyright (c) 2005-2016  David Nash
 //
 // Permission is hereby granted, free of charge, to
 // any person obtaining a copy of this software and
@@ -125,10 +125,13 @@
 //  MemDC.GetDIBits(hBitmap, 0, pbmi->bmiHeader.biHeight, NULL, pbmi, DIB_RGB_COLORS);
 
 
-#include "wxx_wincore.h"
-
 #ifndef _WIN32XX_GDI_H_
 #define _WIN32XX_GDI_H_
+
+
+#include "wxx_appcore0.h"
+#include "wxx_wincore0.h"
+#include "wxx_exception.h"
 
 
 // Disable macros from Windowsx.h
@@ -156,12 +159,12 @@ namespace Win32xx
 		int		GetObject(int nCount, LPVOID pObject) const;
 
 	protected:
+		void	Release();
 		void SetManaged(bool IsManaged) { m_pData->IsManagedObject = IsManaged; }
 
 	private:
 		void	AddToMap();
 		BOOL	RemoveFromMap();
-		void	Release();
 
 		CGDI_Data* m_pData;
 	};
@@ -396,11 +399,11 @@ namespace Win32xx
 #endif
 
 		// Initialization
-		BOOL CreateCompatibleDC(HDC hdcSource);
-		BOOL CreateDC(LPCTSTR lpszDriver, LPCTSTR lpszDevice, LPCTSTR lpszOutput, const DEVMODE* pInitData);
+		HDC CreateCompatibleDC(HDC hdcSource);
+		HDC CreateDC(LPCTSTR lpszDriver, LPCTSTR lpszDevice, LPCTSTR lpszOutput, const DEVMODE* pInitData);
 		int GetDeviceCaps(int nIndex) const;
 #ifndef _WIN32_WCE
-		BOOL CreateIC(LPCTSTR lpszDriver, LPCTSTR lpszDevice, LPCTSTR lpszOutput, const DEVMODE* pInitData);
+		HDC CreateIC(LPCTSTR lpszDriver, LPCTSTR lpszDevice, LPCTSTR lpszOutput, const DEVMODE* pInitData);
 #endif
 
 		// Create Bitmaps
@@ -674,7 +677,6 @@ namespace Win32xx
 		BOOL SetViewportExtEx(int x, int y, LPSIZE lpSize) const;
 		BOOL SetViewportExtEx(SIZE size, LPSIZE lpSizeRet) const;
 		BOOL ScaleViewportExtEx(int xNum, int xDenom, int yNum, int yDenom, LPSIZE lpSize) const;
-		BOOL OffsetWindowOrg(int nWidth, int nHeight, LPPOINT lpPoint) const;
 		BOOL GetWindowExtEx(LPSIZE lpSize)  const;
 		BOOL SetWindowExtEx(int x, int y, LPSIZE lpSize) const;
 		BOOL SetWindowExtEx(SIZE size, LPSIZE lpSizeRet) const;
@@ -724,18 +726,18 @@ namespace Win32xx
 		CSize TabbedTextOut(int x, int y, LPCTSTR lpszString, int nCount, int nTabPositions, LPINT lpnTabStopPositions, int nTabOrigin) const;
 		BOOL  TextOut(int x, int y, LPCTSTR lpszString, int nCount = -1) const;
 
-  #if (_WIN32_WINNT >= 0x0500)
+  #if (_WIN32_WINNT >= 0x0500) && !defined(__GNUC__)
 		BOOL  GetCharABCWidthsI(UINT giFirst, UINT cgi, LPWORD pgi, LPABC pABC) const;
 		BOOL  GetCharWidthI(UINT giFirst, UINT cgi, LPWORD pgi, int* pBuffer) const;
-  #endif // (_WIN32_WINNT >= 0x0500)
+  #endif // (_WIN32_WINNT >= 0x0500) && !defined(__GNUC__)
 #endif  // _WIN32_WCE
 
 	protected:
+		void Release();
 		void SetManaged(bool IsManaged) { m_pData->IsManagedHDC = IsManaged; }
 
 	private:
 		void AddToMap();
-		void Release();
 		BOOL RemoveFromMap();
 
 		CDC_Data* m_pData;		// pointer to the class's data members
@@ -747,10 +749,23 @@ namespace Win32xx
 		CClientDC(HWND hWnd)
 		{
 			if (0 == hWnd) hWnd = GetDesktopWindow();
-
 			assert(::IsWindow(hWnd));
-			Attach(::GetDC(hWnd), hWnd);
-			SetManaged(true);
+
+			try
+			{
+				HDC hDC = ::GetDC(hWnd);
+				if (hDC == 0)
+					throw CResourceException(_T("GetDC failed"));
+
+				Attach(hDC, hWnd);
+				SetManaged(true);
+			}
+
+			catch(...)
+			{
+				Release();	// Cleanup
+				throw;		// Rethrow
+			}
 		}
 
 		virtual ~CClientDC() {}
@@ -762,10 +777,23 @@ namespace Win32xx
 		CClientDCEx(HWND hWnd, HRGN hrgnClip, DWORD flags)
 		{
 			if (0 == hWnd) hWnd = GetDesktopWindow();
-
 			assert(::IsWindow(hWnd));
-			Attach(::GetDCEx(hWnd, hrgnClip, flags), hWnd);
-			SetManaged(true);
+
+			try
+			{
+				HDC hDC = ::GetDCEx(hWnd, hrgnClip, flags);
+				if (hDC == 0)
+					throw CResourceException(_T("GetDCEx failed"));
+
+				Attach(hDC, hWnd);
+				SetManaged(true);
+			}
+
+			catch(...)
+			{
+				Release();	// Cleanup
+				throw;		// Rethrow
+			}
 		}
 
 		virtual ~CClientDCEx() {}
@@ -776,8 +804,16 @@ namespace Win32xx
 	public:
 		CMemDC(HDC hdc)
 		{
-			Attach(::CreateCompatibleDC(hdc));
-			SetManaged(true);
+			try
+			{
+				CreateCompatibleDC(hdc);
+			}
+
+			catch(...)
+			{
+				Release();	// Cleanup
+				throw;		// Rethrow
+			}
 		}
 		virtual ~CMemDC() {}
 	};
@@ -785,12 +821,25 @@ namespace Win32xx
 	class CPaintDC : public CDC
 	{
 	public:
-		CPaintDC(HWND hWnd)
+		CPaintDC(HWND hWnd) : m_hWndPaint(hWnd)
 		{
 			assert(::IsWindow(hWnd));
-			m_hWndPaint = hWnd;
-			Attach(::BeginPaint(hWnd, &m_ps), hWnd);
-			SetManaged(true);
+
+			try
+			{
+				HDC hDC = ::BeginPaint(hWnd, &m_ps);
+				if (hDC == 0)
+					throw CResourceException(_T("BeginPaint failed"));
+
+				Attach(hDC, hWnd);
+				SetManaged(true);
+			}
+
+			catch(...)
+			{
+				Release();	// Cleanup
+				throw;		// Rethrow
+			}
 		}
 
 		virtual ~CPaintDC()
@@ -809,10 +858,24 @@ namespace Win32xx
 		CWindowDC(HWND hWnd)
 		{
 			if (0 == hWnd) hWnd = GetDesktopWindow();
-
 			assert(::IsWindow(hWnd));
-			Attach(::GetWindowDC(hWnd), hWnd);
-			SetManaged(true);
+
+			try
+			{
+				HDC hDC = ::GetWindowDC(hWnd);
+				if (hDC == 0)
+					throw CResourceException(_T("GetWindowDC failed"));
+
+				Attach(hDC, hWnd);
+				SetManaged(true);
+			}
+
+			catch(...)
+			{
+				Release();	// Cleanup
+				throw;		// Rethrow
+			}
+
 		}
 		virtual ~CWindowDC() {}
 	};
@@ -835,14 +898,17 @@ namespace Win32xx
 				::DeleteEnhMetaFile(m_hEMF);
 			}
 		}
-		void Create(LPCTSTR lpszFilename = NULL) 
-		{ 
+		void Create(LPCTSTR lpszFilename = NULL)
+		{
 			Attach(::CreateMetaFile(lpszFilename));
 		}
 		void CreateEnhanced(HDC hdcRef, LPCTSTR lpszFileName, LPCRECT lpBounds, LPCTSTR lpszDescription)
 		{
-			Attach(::CreateEnhMetaFile(hdcRef, lpszFileName, lpBounds, lpszDescription));
-			assert(GetHDC());
+			HDC hDC = ::CreateEnhMetaFile(hdcRef, lpszFileName, lpBounds, lpszDescription);
+			if (hDC == 0)
+				throw CResourceException(_T("CreateEnhMetaFile failed"));
+
+			Attach(hDC);
 		}
 		HMETAFILE Close() {	return ::CloseMetaFile(GetHDC()); }
 		HENHMETAFILE CloseEnhanced() { return ::CloseEnhMetaFile(GetHDC()); }
@@ -956,10 +1022,8 @@ namespace Win32xx
 	{
 		assert( &GetApp() );
 		assert(m_pData->hGDIObject);
-		
-		GetApp().m_csMapLock.Lock();
-		GetApp().m_mapCGDIData.insert(std::make_pair(m_pData->hGDIObject, m_pData));
-		GetApp().m_csMapLock.Release();
+
+		GetApp().AddCGDIData(m_pData->hGDIObject, m_pData);
 	}
 
 	inline void CGDIObject::Attach(HGDIOBJ hObject)
@@ -979,7 +1043,7 @@ namespace Win32xx
 			if (hObject)
 			{
 				// Add the GDI object to this CCGDIObject
-				CGDI_Data* pCGDIData = GetApp().GetCGDIDataFromMap(hObject);
+				CGDI_Data* pCGDIData = GetApp().GetCGDIData(hObject);
 				if (pCGDIData)
 				{
 					delete m_pData;
@@ -1021,7 +1085,7 @@ namespace Win32xx
 		if (m_pData->Count > 0)
 		{
 			if (InterlockedDecrement(&m_pData->Count) == 0)
-			{			
+			{
 				delete m_pData;
 			}
 		}
@@ -1054,7 +1118,7 @@ namespace Win32xx
 				{
 					::DeleteObject(m_pData->hGDIObject);
 				}
-				
+
 				RemoveFromMap();
 			}
 
@@ -1187,6 +1251,9 @@ namespace Win32xx
 		{
 			assert(&GetApp());
 			HBITMAP hBitmap = ::CreateMappedBitmap(GetApp().GetResourceHandle(), nIDBitmap, (WORD)nFlags, lpColorMap, nMapSize);
+			if (hBitmap == 0)
+				throw CResourceException(_T("CreateMappedBitmap failed"));
+
 			Attach(hBitmap);
 			SetManaged(true);
 			return hBitmap;
@@ -1197,6 +1264,9 @@ namespace Win32xx
 		// Creates a bitmap with the specified width, height, and color format (color planes and bits-per-pixel).
 		{
 			HBITMAP hBitmap = ::CreateBitmap(nWidth, nHeight, nPlanes, nBitsPerPixel, lpBits);
+			if (hBitmap == 0)
+				throw CResourceException(_T("CreateBitmap failed"));
+
 			Attach(hBitmap);
 			SetManaged(true);
 			return hBitmap;
@@ -1207,6 +1277,9 @@ namespace Win32xx
 		// Creates a bitmap with the width, height, and color format specified in the BITMAP structure.
 		{
 			HBITMAP hBitmap = ::CreateBitmapIndirect(lpBitmap);
+			if (hBitmap == 0)
+				throw CResourceException(_T("CreateBitmapIndirect failed"));
+
 			Attach(hBitmap);
 			SetManaged(true);
 			return hBitmap;
@@ -1217,6 +1290,9 @@ namespace Win32xx
 		// Creates a bitmap compatible with the device that is associated with the specified device context.
 		{
 			HBITMAP hBitmap = ::CreateCompatibleBitmap(hdc, nWidth, nHeight);
+			if (hBitmap == 0)
+				throw CResourceException(_T("CreateCompatibleBitmap"));
+
 			Attach(hBitmap);
 			SetManaged(true);
 			return hBitmap;
@@ -1255,7 +1331,7 @@ namespace Win32xx
 		}
 
 		// DIB support
-		inline HBITMAP CBitmap::CreateDIBitmap(HDC hdc, CONST BITMAPINFOHEADER* lpbmih, DWORD dwInit, CONST VOID* lpbInit, CONST BITMAPINFO* lpbmi, UINT uColorUse)
+		inline HBITMAP CBitmap::CreateDIBitmap(HDC hdc, CONST BITMAPINFOHEADER* lpbmih, DWORD dwInit, LPCVOID lpbInit, CONST BITMAPINFO* lpbmi, UINT uColorUse)
 		// Creates a compatible bitmap (DDB) from a DIB and, optionally, sets the bitmap bits.
 		{
 			HBITMAP hBitmap = ::CreateDIBitmap(hdc, lpbmih, dwInit, lpbInit, lpbmi, uColorUse);
@@ -1394,7 +1470,7 @@ namespace Win32xx
 
 #endif // !_WIN32_WCE
 
-		inline HBITMAP CBitmap::CreateDIBSection(HDC hdc, CONST BITMAPINFO* lpbmi, UINT uColorUse, VOID** ppvBits, HANDLE hSection, DWORD dwOffset)
+		inline HBITMAP CBitmap::CreateDIBSection(HDC hdc, CONST BITMAPINFO* lpbmi, UINT uColorUse, LPVOID* ppvBits, HANDLE hSection, DWORD dwOffset)
 		// Creates a DIB that applications can write to directly. The function gives you a pointer to the location of the bitmap bit values.
 		// You can supply a handle to a file-mapping object that the function will use to create the bitmap, or you can let the system allocate the memory for the bitmap.
 		{
@@ -1435,9 +1511,16 @@ namespace Win32xx
 
 	inline CBrush::CBrush(COLORREF crColor)
 	{
-		Attach( ::CreateSolidBrush(crColor) );
-		assert (GetHandle());
-		SetManaged(true);
+		try
+		{
+			CreateSolidBrush(crColor);
+		}
+
+		catch(...)
+		{
+			Release();	// Cleanup
+			throw;		// Rethrow
+		}
 	}
 
 	inline CBrush::operator HBRUSH() const
@@ -1453,6 +1536,9 @@ namespace Win32xx
 	// Creates a logical brush that has the specified solid color.
 	{
 		HBRUSH hBrush = ::CreateSolidBrush(crColor);
+		if (hBrush == 0)
+			throw CResourceException(_T("CreateSolidBrush failed"));
+
 		Attach(hBrush);
 		SetManaged(true);
 		return hBrush;
@@ -1463,6 +1549,9 @@ namespace Win32xx
 	// Creates a logical brush that has the specified hatch pattern and color.
 	{
 		HBRUSH hBrush = ::CreateHatchBrush(nIndex, crColor);
+		if (hBrush == 0)
+			throw CResourceException(_T("CreateHatchBrush failed"));
+
 		Attach(hBrush);
 		SetManaged(true);
 		return hBrush;
@@ -1472,6 +1561,9 @@ namespace Win32xx
 	// Creates a logical brush from style, color, and pattern specified in the LOGPRUSH struct.
 	{
 		HBRUSH hBrush = ::CreateBrushIndirect(lpLogBrush);
+		if (hBrush == 0)
+			throw CResourceException(_T("CreateBrushIndirect failed"));
+
 		Attach(hBrush);
 		SetManaged(true);
 		return hBrush;
@@ -1481,6 +1573,9 @@ namespace Win32xx
 	// Creates a logical brush that has the pattern specified by the specified device-independent bitmap (DIB).
 	{
 		HBRUSH hBrush = ::CreateDIBPatternBrush(hglbDIBPacked, fuColorSpec);
+		if (hBrush == 0)
+			throw CResourceException(_T("CreateDIBPatternBrush failed"));
+
 		Attach(hBrush);
 		SetManaged(true);
 		return hBrush;
@@ -1490,6 +1585,9 @@ namespace Win32xx
 	// Creates a logical brush that has the pattern specified by the device-independent bitmap (DIB).
 	{
 		HBRUSH hBrush = ::CreateDIBPatternBrushPt(lpPackedDIB, nUsage);
+		if (hBrush == 0)
+			throw CResourceException(_T("CreateDIBPatternBrushPt failed"));
+
 		Attach(hBrush);
 		SetManaged(true);
 		return hBrush;
@@ -1502,6 +1600,9 @@ namespace Win32xx
 	// which is created by the CreateDIBSection function, or it can be a device-dependent bitmap.
 	{
 		HBRUSH hBrush = ::CreatePatternBrush(hBitmap);
+		if (hBrush == 0)
+			throw CResourceException(_T("CreatePatternBrush failed"));
+
 		Attach(hBrush);
 		SetManaged(true);
 		return hBrush;
@@ -1532,8 +1633,16 @@ namespace Win32xx
 
 	inline CFont::CFont(const LOGFONT* lpLogFont)
 	{
-		Attach( ::CreateFontIndirect(lpLogFont) );
-		SetManaged(true);
+		try
+		{
+			CreateFontIndirect(lpLogFont);
+		}
+
+		catch(...)
+		{
+			Release();	// Cleanup
+			throw;		// Rethrow;
+		}
 	}
 
 	inline CFont::operator HFONT() const
@@ -1549,6 +1658,9 @@ namespace Win32xx
 	// Creates a logical font that has the specified characteristics.
 	{
 		HFONT hFont = ::CreateFontIndirect(lpLogFont);
+		if (hFont == 0)
+			throw CResourceException(_T("CreateFontIndirect"));
+
 		Attach(hFont);
 		SetManaged(true);
 		return hFont;
@@ -1613,6 +1725,9 @@ namespace Win32xx
 			dwCharSet, dwOutPrecision, dwClipPrecision, dwQuality,
 			dwPitchAndFamily, lpszFacename);
 
+		if (hFont == 0)
+			throw CResourceException(_T("CreateFont failed"));
+
 		Attach(hFont);
 		SetManaged(true);
 		return hFont;
@@ -1655,6 +1770,9 @@ namespace Win32xx
 	// Creates a logical palette from the information in the specified LOGPALETTE structure.
 	{
 		HPALETTE hPalette = ::CreatePalette (lpLogPalette);
+		if (hPalette == 0)
+			throw CResourceException(_T("CreatePalette failed"));
+
 		Attach(hPalette);
 		SetManaged(true);
 		return hPalette;
@@ -1665,6 +1783,9 @@ namespace Win32xx
 	// Creates a halftone palette for the specified device context (DC).
 	{
 		HPALETTE hPalette = ::CreateHalftonePalette(hdc);
+		if (hPalette == 0)
+			throw CResourceException(_T("CreateHalftonePalette failed"));
+
 		Attach(hPalette);
 		::RealizePalette(hdc);
 		SetManaged(true);
@@ -1733,15 +1854,31 @@ namespace Win32xx
 
 	inline CPen::CPen(int nPenStyle, int nWidth, COLORREF crColor)
 	{
-		Attach( ::CreatePen(nPenStyle, nWidth, crColor) );
-		SetManaged(true);
+		try
+		{
+			CreatePen(nPenStyle, nWidth, crColor);
+		}
+
+		catch(...)
+		{
+			Release();	// Cleanup
+			throw;		// Rethrow
+		}
 	}
 
 #ifndef _WIN32_WCE
 	inline CPen::CPen(int nPenStyle, int nWidth, const LOGBRUSH* pLogBrush, int nStyleCount /*= 0*/, const DWORD* lpStyle /*= NULL*/)
 	{
-		Attach( ::ExtCreatePen(nPenStyle, nWidth, pLogBrush, nStyleCount, lpStyle) );
-		SetManaged(true);
+		try
+		{
+			ExtCreatePen(nPenStyle, nWidth, pLogBrush, nStyleCount, lpStyle);
+		}
+
+		catch(...)
+		{
+			Release();	// Cleanup
+			throw;		// Rethrow
+		}
 	}
 #endif // !_WIN32_WCE
 
@@ -1831,6 +1968,9 @@ namespace Win32xx
 	// Creates a rectangular region.
 	{
 		HRGN hRgn = ::CreateRectRgn(x1, y1, x2, y2);
+		if (hRgn == 0)
+			throw CResourceException(_T("CreateRectRgn failed"));
+
 		Attach(hRgn);
 		SetManaged(true);
 		return hRgn;
@@ -1840,6 +1980,9 @@ namespace Win32xx
 	// Creates a rectangular region.
 	{
 		HRGN hRgn = ::CreateRectRgnIndirect(&rc);
+		if (hRgn == 0)
+			throw CResourceException(_T("CreateRectRgnIndirect failed"));
+
 		Attach(hRgn);
 		SetManaged(true);
 		return hRgn;
@@ -1850,6 +1993,9 @@ namespace Win32xx
 	// Creates an elliptical region.
 	{
 		HRGN hRgn = ::CreateEllipticRgn(x1, y1, x2, y2);
+		if (hRgn == 0)
+			throw CResourceException(_T("CreateEllipticRgn failed"));
+
 		Attach(hRgn);
 		SetManaged(true);
 		return hRgn;
@@ -1859,6 +2005,9 @@ namespace Win32xx
 	// Creates an elliptical region.
 	{
 		HRGN hRgn = ::CreateEllipticRgnIndirect(&rc);
+		if (hRgn == 0)
+			throw CResourceException(_T("CreateEllipticRgnIndirect failed"));
+
 		Attach(hRgn);
 		SetManaged(true);
 		return hRgn;
@@ -1868,6 +2017,9 @@ namespace Win32xx
 	// Creates a polygonal region.
 	{
 		HRGN hRgn = ::CreatePolygonRgn(lpPoints, nCount, nMode);
+		if (hRgn == 0)
+			throw CResourceException(_T("CreatePolygonRgn failed"));
+
 		Attach(hRgn);
 		SetManaged(true);
 		return hRgn;
@@ -1877,6 +2029,9 @@ namespace Win32xx
 	// Creates a region consisting of a series of polygons. The polygons can overlap.
 	{
 		HRGN hRgn = ::CreatePolyPolygonRgn(lpPoints, lpPolyCounts, nCount, nPolyFillMode);
+		if (hRgn == 0)
+			throw CResourceException(_T("CreatePolyPolygonRgn failed"));
+
 		Attach(hRgn);
 		SetManaged(true);
 		return hRgn;
@@ -1886,6 +2041,9 @@ namespace Win32xx
 	// Creates a rectangular region with rounded corners.
 	{
 		HRGN hRgn = ::CreateRoundRectRgn(x1, y1, x2, y2, x3, y3);
+		if (hRgn == 0)
+			throw CResourceException(_T("CreateRoundRectRgn failed"));
+
 		Attach(hRgn);
 		SetManaged(true);
 		return hRgn;
@@ -1897,6 +2055,9 @@ namespace Win32xx
 	{
 		assert(hDC != NULL);
 		HRGN hRgn = ::PathToRegion(hDC);
+		if (hRgn == 0)
+			throw CResourceException(_T("PathToRegion failed"));
+
 		Attach(hRgn);
 		SetManaged(true);
 		return hRgn;
@@ -1908,6 +2069,9 @@ namespace Win32xx
 	// Creates a region from the specified region and transformation data.
 	{
 		HRGN hRgn = ::ExtCreateRegion(lpXForm, nCount, pRgnData);
+		if (hRgn == 0)
+			throw CResourceException(_T("ExtCreateRegion failed"));
+
 		Attach(hRgn);
 		SetManaged(true);
 		return hRgn;
@@ -2072,10 +2236,8 @@ inline CDC::CDC(HDC hDC, HWND hWnd /*= 0*/)
 	{
 		assert( &GetApp() );
 		assert(m_pData->hDC);
-		
-		GetApp().m_csMapLock.Lock();
-		GetApp().m_mapCDCData.insert(std::make_pair(m_pData->hDC, m_pData));
-		GetApp().m_csMapLock.Release();
+
+		GetApp().AddCDCData(m_pData->hDC, m_pData);
 	}
 
 	inline void CDC::Attach(HDC hDC, HWND hWnd /* = 0*/)
@@ -2095,11 +2257,11 @@ inline CDC::CDC(HDC hDC, HWND hWnd /*= 0*/)
 
 				// Assign values to our data members
 				m_pData = new CDC_Data;
-			}		
-			
+			}
+
 			if (hDC)
 			{
-				CDC_Data* pCDCData = GetApp().GetCDCDataFromMap(hDC);
+				CDC_Data* pCDCData = GetApp().GetCDCData(hDC);
 				if (pCDCData)
 				{
 					delete m_pData;
@@ -2159,46 +2321,51 @@ inline CDC::CDC(HDC hDC, HWND hWnd /*= 0*/)
 #endif
 
 	// Initialization
-	inline BOOL CDC::CreateCompatibleDC(HDC hdcSource)
+	inline HDC CDC::CreateCompatibleDC(HDC hdcSource)
 	// Returns a memory device context (DC) compatible with the specified device.
 	{
 		assert(m_pData->hDC == NULL);
 		HDC hDC = ::CreateCompatibleDC(hdcSource);
-		if (hDC != 0)
-		{
-			m_pData->hDC = hDC;
-			m_pData->IsManagedHDC = TRUE;
-			AddToMap();
-		}
-		return (hDC != NULL);	// boolean expression
+
+		if (hDC == NULL)
+			throw CResourceException(_T("CreateCompatibleDC failed"));
+
+		m_pData->hDC = hDC;
+		m_pData->IsManagedHDC = TRUE;
+		AddToMap();
+
+		return hDC;
 	}
 
-	inline BOOL CDC::CreateDC(LPCTSTR lpszDriver, LPCTSTR lpszDevice, LPCTSTR lpszOutput, const DEVMODE* pInitData)
+
+	inline HDC CDC::CreateDC(LPCTSTR lpszDriver, LPCTSTR lpszDevice, LPCTSTR lpszOutput, const DEVMODE* pInitData)
 	// Returns a device context (DC) for a device using the specified name.
 	{
 		assert(m_pData->hDC == NULL);
 		HDC hDC = ::CreateDC(lpszDriver, lpszDevice, lpszOutput, pInitData);
-		if (hDC != 0)
-		{
-			m_pData->hDC = hDC;
-			m_pData->IsManagedHDC = TRUE;
-			AddToMap();
-		}
-		return (hDC != NULL);	// boolean expression
+
+		if (hDC == NULL)
+			throw CResourceException(_T("CreateDC failed"));
+
+		m_pData->hDC = hDC;
+		m_pData->IsManagedHDC = TRUE;
+		AddToMap();
+		return hDC;
 	}
 
 #ifndef _WIN32_WCE
-	inline BOOL CDC::CreateIC(LPCTSTR lpszDriver, LPCTSTR lpszDevice, LPCTSTR lpszOutput, const DEVMODE* pInitData)
+	inline HDC CDC::CreateIC(LPCTSTR lpszDriver, LPCTSTR lpszDevice, LPCTSTR lpszOutput, const DEVMODE* pInitData)
 	{
 		assert(m_pData->hDC == NULL);
 		HDC hDC = ::CreateIC(lpszDriver, lpszDevice, lpszOutput, pInitData);
-		if (hDC != 0)
-		{
-			m_pData->hDC = hDC;
-			m_pData->IsManagedHDC = TRUE;
-			AddToMap();
-		}
-		return (hDC != NULL);	// boolean expression
+
+		if (hDC == 0)
+			throw CResourceException(_T("CreateIC failed"));
+
+		m_pData->hDC = hDC;
+		m_pData->IsManagedHDC = TRUE;
+		AddToMap();
+		return hDC;
 	}
 #endif
 
@@ -4080,7 +4247,7 @@ inline CDC::CDC(HDC hDC, HWND hWnd /*= 0*/)
 		return ::TextOut(m_pData->hDC, x, y, lpszString, nCount);
 	}
 
-  #if (_WIN32_WINNT >= 0x0500)
+  #if (_WIN32_WINNT >= 0x0500) && !defined(__GNUC__)
 	inline BOOL CDC::GetCharABCWidthsI(UINT giFirst, UINT cgi, LPWORD pgi, LPABC pABC) const
 	// Retrieves the widths, in logical units, of consecutive glyph indices in a specified range from the
 	// current TrueType font. This function succeeds only with TrueType fonts.

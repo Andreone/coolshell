@@ -1,12 +1,12 @@
-// Win32++   Version 8.0.1
-// Release Date: 28th July 2015
+// Win32++   Version 8.2
+// Release Date: 11th April 2016
 //
 //      David Nash
 //      email: dnash@bigpond.net.au
 //      url: https://sourceforge.net/projects/win32-framework
 //
 //
-// Copyright (c) 2005-2015  David Nash
+// Copyright (c) 2005-2016  David Nash
 //
 // Permission is hereby granted, free of charge, to
 // any person obtaining a copy of this software and
@@ -48,14 +48,18 @@
 // images transparently.
  
 
-#include "wxx_wincore.h" 
- 
-#if !defined(_WIN32XX_IMAGELIST_H_)
+#ifndef _WIN32XX_IMAGELIST_H_
 #define _WIN32XX_IMAGELIST_H_
+
+
+#include "wxx_appcore0.h"
+#include "wxx_rect.h"
 
 
 namespace Win32xx
 {
+	// Forward declaration
+	class CBitmap;
 
 	///////////////////////////////////////
 	// Declaration of the CImageList class, which manages ImageLists.
@@ -79,9 +83,7 @@ namespace Win32xx
 		BOOL Create(int cx, int cy, UINT nFlags, int nInitial, int nGrow);
 		BOOL Create(UINT nBitmapID, int cx, int nGrow, COLORREF crMask);
 		BOOL Create(LPCTSTR lpszBitmapID, int cx, int nGrow, COLORREF crMask);
-#if (_WIN32_IE >= 0x0400)
 		BOOL Create(HIMAGELIST hImageList);
-#endif
 
 #ifndef _WIN32_WCE
 		BOOL CreateDisabledImageList(HIMAGELIST himlNormal);
@@ -138,7 +140,6 @@ namespace Win32xx
 	{
 		m_pData = new CIml_Data;
 		Attach(himl);
-	//	m_pData->IsManagedHiml = TRUE;
 	}
 
 	inline CImageList::CImageList(const CImageList& rhs)
@@ -178,9 +179,7 @@ namespace Win32xx
 		assert( &GetApp() );
 		assert(m_pData->hImageList);
 
-		GetApp().m_csMapLock.Lock();
-		GetApp().m_mapCImlData.insert(std::make_pair(m_pData->hImageList, m_pData));
-		GetApp().m_csMapLock.Release();
+		GetApp().AddCImlData(m_pData->hImageList, m_pData);
 	}
 
 	inline BOOL CImageList::RemoveFromMap()
@@ -257,7 +256,7 @@ namespace Win32xx
 			if (hImageList)
 			{
 				// Add the image list to this CImageList
-				CIml_Data* pCImlData = GetApp().GetCImlDataFromMap(hImageList);
+				CIml_Data* pCImlData = GetApp().GetCImlData(hImageList);
 				if (pCImlData)
 				{
 					delete m_pData;
@@ -347,7 +346,6 @@ namespace Win32xx
 		return ( himlNew!= 0 );
 	}
 
-#if (_WIN32_IE >= 0x0400)
 	inline BOOL CImageList::Create(HIMAGELIST hImageList)
 	// Creates a duplicate ImageList
 	{
@@ -362,7 +360,6 @@ namespace Win32xx
 
 		return ( himlCopy!= 0 );
 	}
-#endif
 
 	inline void CImageList::DeleteImageList()
 	// Destroys an image list.
@@ -612,5 +609,5 @@ namespace Win32xx
 #endif
 }	// namespace Win32xx
 
-#endif	// _WIN32XX_MENU_H_
+#endif	// _WIN32XX_IMAGELIST_H_
 

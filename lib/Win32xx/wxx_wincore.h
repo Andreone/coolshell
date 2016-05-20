@@ -1,12 +1,12 @@
-// Win32++   Version 8.0.1
-// Release Date: 28th July 2015
+// Win32++   Version 8.2
+// Release Date: 11th April 2016
 //
 //      David Nash
 //      email: dnash@bigpond.net.au
 //      url: https://sourceforge.net/projects/win32-framework
 //
 //
-// Copyright (c) 2005-2015  David Nash
+// Copyright (c) 2005-2016  David Nash
 //
 // Permission is hereby granted, free of charge, to
 // any person obtaining a copy of this software and
@@ -37,43 +37,91 @@
 
 ///////////////////////////////////////////////////////
 // wxx_wincore.h
-//  Declaration of the following classes:
-//  CWinThread, CWinApp, CWnd, CWinException,
-//  CCriticalSection.
+//  This file contains the definition of the CWnd class.
+//  Including this file adds all the code necessary to start Win32++ 
+//  and create simple windows. 
+//  
+//  Refer to the following example code.
 //
-// This file contains the declarations for the core set of classes required to
-// create simple windows using Win32++.
-//
-// 1) CCriticalSection: This class is used internally to manage thread access
-//            to shared resources. You can also use this class to lock and
-//            release your own critical sections.
-//
-// 2) CWinException: This class is used internally by Win32++ to handle
-//            exceptions. You can also use it to throw and catch exceptions.
-//
-// 3) CWinApp: This class is used start Win32++ and run the message loop. You
-//            should inherit from this class to start Win32++ in your own
-//            application.
-//
-// 4) CWinThread: This class is the parent class for CWinApp. It is also the
-//            class used to create additional GUI and worker threads.
-//
-// 5) CWnd:   This class is used to represent a window. It provides a means
-//            of creating the window, and handling its messages. Inherit
-//            from this class to define and control windows.
-//
-//
-// Note: This header file (or another Win32++ header file which includes it)
-//       should be included before all other header files. It sets some
-//       important macros which need to be set before including Windows.h
-//       Including this file first also allows it to disable some pointless
-//       warning messages (see below).
 
+
+// Example code
+/*
+
+///////////////////////////////////
+// main.cpp
+
+// To configure your project:
+// 1) Add Win32++'s include directory to the project's additional include directories for C/C++
+// 2) Add Win32++'s include directory to the project's additional include directories for Resources
+
+#include "wxx_wincore.h"
+
+
+// A class that inherits from CWnd. It is used to create the window.
+class CView : public CWnd
+{
+public:
+    CView() {}
+    virtual ~CView() {}
+    virtual void OnDestroy() { PostQuitMessage(0); }	// Ends the program
+};
+
+
+
+int APIENTRY WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
+{
+    // Start Win32++
+    CWinApp theApp;
+
+    // Create our view window
+    CView MyWin;
+    MyWin.Create();
+
+    // Run the application's message loop
+    return theApp.Run();
+}
+
+*/
 
 
 #ifndef _WIN32XX_WINCORE_H_
 #define _WIN32XX_WINCORE_H_
 
+
+// Automatically include the Win32xx namespace
+// define NO_USING_NAMESPACE to skip this step
+namespace Win32xx {}
+#ifndef NO_USING_NAMESPACE
+  using namespace Win32xx;
+#endif
+
+
+// Define our own VERIFY macro
+// In debug mode, VERIFY asserts if the expression evaluates to zero
+// In release mode, VERIFY evaluates the expression, but doesn't assert.
+#ifndef _WIN32_WCE
+  #ifndef VERIFY
+    #ifndef NDEBUG
+      #define VERIFY(f) assert(f)
+    #else
+      #define VERIFY(f) ((void)(f))
+    #endif
+  #endif
+#endif // _WIN32_WCE
+
+// Ensure UNICODE and _UNICODE definitions are consistent
+#ifdef _UNICODE
+  #ifndef UNICODE
+    #define UNICODE
+  #endif
+#endif
+
+#ifdef UNICODE
+  #ifndef _UNICODE
+    #define _UNICODE
+  #endif
+#endif
 
 // Remove pointless warning messages
 #ifdef _MSC_VER
@@ -100,1276 +148,21 @@
   #pragma GCC diagnostic ignored "-Wmissing-braces"
 #endif
 
-#ifdef _WIN32_WCE
-  #include "wxx_wcestddef.h"
-#endif
 
+//////////////////////////////////////
+//  Include the Win32++ header files
 
-#include <assert.h>
-#include <vector>
-#include <algorithm>
-#include <string>
-#include <map>
-#include <winsock2.h>
-#include <windows.h>
-#include <commctrl.h>
-#include <commdlg.h>
-#include <stdio.h>
-#include <tchar.h>
-#ifndef _WIN32_WCE
-  #include <shlwapi.h>
-  #include <process.h>
-#endif
-#include "wxx_shared_ptr.h"
-//#include "wxx_winutils.h"			// included later in this file
-//#include "wxx_cstring.h"			// included later in this file
-//#include "wxx_gdi.h"				// included later in this file
-//#include "wxx_menu.h"				// included later in this file
-//#include "wxx_imagelist.h"		// included later in this file
-
-
-// For compilers lacking Win64 support
-#ifndef  GetWindowLongPtr
-  #define GetWindowLongPtr   GetWindowLong
-  #define SetWindowLongPtr   SetWindowLong
-  #define GWLP_WNDPROC       GWL_WNDPROC
-  #define GWLP_HINSTANCE     GWL_HINSTANCE
-  #define GWLP_ID            GWL_ID
-  #define GWLP_USERDATA      GWL_USERDATA
-  #define DWLP_DLGPROC       DWL_DLGPROC
-  #define DWLP_MSGRESULT     DWL_MSGRESULT
-  #define DWLP_USER          DWL_USER
-  #define DWORD_PTR          DWORD
-  #define LONG_PTR           LONG
-  #define ULONG_PTR          LONG
-#endif
-#ifndef GetClassLongPtr
-  #define GetClassLongPtr    GetClassLong
-  #define SetClassLongPtr    SetClassLong
-  #define GCLP_HBRBACKGROUND GCL_HBRBACKGROUND
-  #define GCLP_HCURSOR       GCL_HCURSOR
-  #define GCLP_HICON         GCL_HICON
-  #define GCLP_HICONSM       GCL_HICONSM
-  #define GCLP_HMODULE       GCL_HMODULE
-  #define GCLP_MENUNAME      GCL_MENUNAME
-  #define GCLP_WNDPROC       GCL_WNDPROC
-#endif
-
-
-// Messages defined by Win32++
-// WM_APP range: 0x8000 through 0xBFFF
-#define UWM_DOCKACTIVATE     (WM_APP + 0x3F01)  // Message - sent to dock ancestor when a docker is activated or deactivated.
-#define UWM_DOCKDESTROYED	 (WM_APP + 0x3F02)	// Message - posted when docker is destroyed
-#define UWM_DRAWRBBKGND      (WM_APP + 0x3F03)	// Message - sent by rebar to parent to perform background drawing. Return TRUE if handled.
-#define UWM_DRAWSBBKGND      (WM_APP + 0x3F04)	// Message - sent by statusbar to parent to perform background drawing. Return TRUE if handled.
-#define UWM_GETFRAMEVIEW     (WM_APP + 0x3F05)  // Message - returns the HWND of the frame's view window
-#define UWM_GETMBTHEME       (WM_APP + 0x3F06)	// Message - returns a pointer to MenuBarTheme
-#define UWM_GETRBTHEME       (WM_APP + 0x3F07)	// Message - returns a pointer to ReBarTheme
-#define UWM_GETSBTHEME       (WM_APP + 0x3F08)	// Message - returns a pointer to StatusBarTheme
-#define UWM_GETTBTHEME       (WM_APP + 0x3F09)  // Message - returns a pointer to ToolBarTheme
-#define UWM_POPUPMENU		 (WM_APP + 0x3F0A)	// Message - creates the menubar popup menu
-#define UWM_TBRESIZE         (WM_APP + 0x3F0B)  // Message - sent by toolbar to parent. Used by the rebar
-#define UWM_TBWINPOSCHANGING (WM_APP + 0x3F0C)	// Message - sent to parent. Toolbar is resizing
-#define UWM_UPDATECOMMAND    (WM_APP + 0x3F0D)  // Message - sent before a menu is displayed. Used by OnMenuUpdate
-#define UWN_BARSTART		 (WM_APP + 0x3F0E)	// Notification - docker bar selected for move
-#define UWN_BARMOVE			 (WM_APP + 0x3F0F)	// Notification - docker bar moved
-#define UWN_BAREND			 (WM_APP + 0x3F10)	// Notification - end of docker bar move
-#define UWN_DOCKSTART		 (WM_APP + 0x3F11)	// Notification - about to start undocking
-#define UWN_DOCKMOVE		 (WM_APP + 0x3F12)	// Notification - undocked docker is being moved
-#define UWN_DOCKEND			 (WM_APP + 0x3F13)	// Notification - docker has been docked
-#define UWN_TABCHANGED       (WM_APP + 0x3F14)	// Notification - tab size or position changed
-#define UWN_TABDRAGGED       (WM_APP + 0x3F15)	// Notification - tab is being dragged
-#define UWN_UNDOCKED		 (WM_APP + 0x3F16)	// Notification - sent by docker when undocked
-
-// Automatically include the Win32xx namespace
-// define NO_USING_NAMESPACE to skip this step
-namespace Win32xx {}
-#ifndef NO_USING_NAMESPACE
-  using namespace Win32xx;
-#endif
-
-// Version macro
-#define _WIN32XX_VER 0x0801		// Win32++ version 8.0.1
-
-// Required for WinCE
-#ifndef TLS_OUT_OF_INDEXES
-  #define TLS_OUT_OF_INDEXES ((DWORD_PTR) -1)
-#endif
-#ifndef WM_PARENTNOTIFY
-  #define WM_PARENTNOTIFY 0x0210
-#endif
-
-
-namespace Win32xx
-{
-	// Registered messages defined by Win32++
-	const UINT UWM_WINDOWCREATED = RegisterWindowMessage(_T("UWM_WINDOWCREATED"));	// Message - posted when a window is created or attached.
-
-	////////////////////////////////////////////////
-	// Forward declarations.
-	//  These classes are defined later or elsewhere
-	class CArchive;
-	class CDC;
-	class CGDIObject;
-	class CMenu;
-	class CMenuBar;
-	class CWinApp;
-	class CWnd;
-	class CBitmap;
-	class CBrush;
-	class CFont;
-	class CImageList;
-	class CPalette;
-	class CPen;
-	class CRgn;
-
-	// tString is a TCHAR std::string
-	typedef std::basic_string<TCHAR> tString;
-#ifndef _WIN32_WCE
-	typedef std::basic_stringstream<TCHAR> tStringStream;
-#endif
-
-	// Some useful smart pointers
-	typedef Shared_Ptr<CDC> DCPtr;
-	typedef Shared_Ptr<CGDIObject> GDIPtr;
-	typedef Shared_Ptr<CMenu> MenuPtr;
-	typedef Shared_Ptr<CWnd> WndPtr;
-	typedef Shared_Ptr<CBitmap> BitmapPtr;
-	typedef Shared_Ptr<CBrush> BrushPtr;
-	typedef Shared_Ptr<CFont> FontPtr;
-	typedef Shared_Ptr<CImageList> ImageListPtr;
-	typedef Shared_Ptr<CPalette> PalettePtr;
-	typedef Shared_Ptr<CPen> PenPtr;
-	typedef Shared_Ptr<CRgn> RgnPtr;
-
-	enum Constants			// Defines the maximum size for TCHAR strings
-	{
-		MAX_MENU_STRING = 80,
-		MAX_STRING_SIZE = 255
-	};
-
-	struct CDC_Data	// A structure that contains the data members for CDC
-	{
-		// Constructor
-		CDC_Data() : hDC(0), Count(1L), IsManagedHDC(FALSE), hWnd(0), nSavedDCState(0) {}
-
-		std::vector<GDIPtr> m_vGDIObjects;	// Smart pointers to internally created Bitmaps, Brushes, Fonts, Bitmaps and Regions
-		HDC		hDC;			// The HDC belonging to this CDC
-		long	Count;			// Reference count
-		bool	IsManagedHDC;	// Delete/Release the HDC on destruction
-		HWND	hWnd;			// The HWND of a Window or Client window DC
-		int		nSavedDCState;	// The save state of the HDC.
-	};
-
-	struct CGDI_Data	// A structure that contains the data members for CGDIObject
-	{
-		// Constructor
-		CGDI_Data() : hGDIObject(0), Count(1L), IsManagedObject(FALSE) {}
-
-		HGDIOBJ hGDIObject;
-		long	Count;
-		bool	IsManagedObject;
-	};
-
-	struct CIml_Data	// A structure that contains the data members for CImageList
-	{
-		// Constructor
-		CIml_Data() : hImageList(0), IsManagedHiml(FALSE), Count(1L) {}
-
-		HIMAGELIST	hImageList;
-		bool		IsManagedHiml;
-		long		Count;
-	};
-
-#ifndef _WIN32_WCE
-	struct CMenu_Data	// A structure that contains the data members for CMenu
-	{
-		// Constructor
-		CMenu_Data() : hMenu(0), IsManagedMenu(FALSE), Count(1L) {}
-
-		std::vector<MenuPtr> vSubMenus;	// A vector of smart pointers to CMenu
-		HMENU hMenu;
-		bool IsManagedMenu;
-		long Count;
-	};
-#endif
-
-	struct CompareHDC		// The comparison function object used by CWinApp::m_mapHDC
-	{
-		bool operator()(HDC const a, const HDC b) const
-			{return ((DWORD_PTR)a < (DWORD_PTR)b);}
-	};
-
-	struct CompareGDI		// The comparison function object used by CWinApp::m_mapGDI
-	{
-		bool operator()(HGDIOBJ const a, const HGDIOBJ b) const
-			{return ((DWORD_PTR)a < (DWORD_PTR)b);}
-	};
-
-	struct CompareHIMAGELIST // The comparison function object used by CWinApp::m_mapHIMAGELIST
-	{
-		bool operator()(HIMAGELIST const a, const HIMAGELIST b) const
-			{return ((DWORD_PTR)a < (DWORD_PTR)b);}
-	};
-
-	struct CompareHMENU		// The comparison function object used by CWinApp::m_mapHMENU
-	{
-		bool operator()(HMENU const a, const HMENU b) const
-			{return ((DWORD_PTR)a < (DWORD_PTR)b);}
-	};
-
-	struct CompareHWND		// The comparison function object used by CWinApp::m_mapHWND
-	{
-		bool operator()(HWND const a, const HWND b) const
-			{return ((DWORD_PTR)a < (DWORD_PTR)b);}
-	};
-
-	struct TLSData			// Used for Thread Local Storage (TLS)
-	{
-		CWnd* pWnd;			// pointer to CWnd object for Window creation
-		CWnd* pMainWnd;		// pointer to the main window for the thread (usually CFrame)
-		CMenuBar* pMenuBar;	// pointer to CMenuBar object used for the WH_MSGFILTER hook
-		HHOOK hMsgHook;		// WH_MSGFILTER hook for CMenuBar and Modal Dialogs
-		long nDlgHooks;		// Number of Dialog MSG hooks
-
-		TLSData() : pWnd(0), pMainWnd(0), pMenuBar(0), hMsgHook(0), nDlgHooks(0) {}	// Constructor
-	};
-
-
-	/////////////////////////////////////////
-	// Declarations for the CCriticalSection class
-	// This class is used for thread synchronisation
-	class CCriticalSection
-	{
-	public:
-		CCriticalSection()	{ ::InitializeCriticalSection(&m_cs); }
-		~CCriticalSection()	{ ::DeleteCriticalSection(&m_cs); }
-
-		void Lock() 	{ ::EnterCriticalSection(&m_cs); }
-		void Release()	{ ::LeaveCriticalSection(&m_cs); }
-
-	private:
-		CCriticalSection ( const CCriticalSection& );
-		CCriticalSection& operator = ( const CCriticalSection& );
-
-		CRITICAL_SECTION m_cs;
-	};
-
-
-	////////////////////////////////////////
-	// Declaration of the CWinException class
-	//
-	// Note: Each function guarantees not to throw an exception
-
-	class CWinException : public std::exception
-	{
-	public:
-		CWinException(LPCTSTR pszText) throw ();
-		~CWinException() throw() {}
-		DWORD GetError() const throw ();
-		LPCTSTR GetErrorString() const throw ();
-		LPCTSTR GetText() const throw ();
-		const char * what () const throw ();
-
-	private:
-		DWORD  m_Error;
-		LPCTSTR m_pszText;
-		TCHAR m_szErrorString[MAX_STRING_SIZE];
-	};
-
-	// Typedef for _beginthreadex's callback function
-	typedef UINT (WINAPI *PFNTHREADPROC)(LPVOID);
-
-
-	///////////////////////////////////
-	// Declaration of the CObject class
-	//
-	class CObject
-	{
-	public:
-		CObject() {}
-		virtual ~CObject() {}
-
-		virtual void Serialize(CArchive& ar);
-
-	private:
-	};
-
-
-	//////////////////////////////////////
-	// Declaration of the CWinThread class
-	//
-	class CWinThread : public CObject
-	{
-	public:
-		CWinThread();
-		CWinThread(PFNTHREADPROC pfnThreadProc, LPVOID pParam);
-		virtual ~CWinThread();
-
-		// Overridables
-		virtual BOOL InitInstance();
-		virtual int MessageLoop();
-		virtual BOOL OnIdle(LONG lCount);
-		virtual BOOL PreTranslateMessage(MSG Msg);
-
-		// Operations
-		void	CreateThread(unsigned initflag = 0, unsigned stack_size = 0, LPSECURITY_ATTRIBUTES pSecurityAttributes = NULL);
-		HACCEL	GetAccelerators() const { return m_hAccel; }
-		CWnd*	GetAcceleratorsWindow() const { return m_pWndAccel; }
-		CWnd*	GetMainWnd() const;
-		HANDLE	GetThread()	const;
-		int		GetThreadID() const;
-		int		GetThreadPriority() const;
-		BOOL	PostThreadMessage(UINT message, WPARAM wParam, LPARAM lParam) const;
-		DWORD	ResumeThread() const;
-		void	SetAccelerators(HACCEL hAccel, CWnd* pWndAccel);
-		void	SetMainWnd(CWnd* pWnd);
-		BOOL	SetThreadPriority(int nPriority) const;
-		DWORD	SuspendThread() const;
-		operator HANDLE () const { return GetThread(); }
-
-	private:
-		CWinThread(const CWinThread&);				// Disable copy construction
-		CWinThread& operator = (const CWinThread&);	// Disable assignment operator
-
-		static	UINT WINAPI StaticThreadProc(LPVOID pCThread);
-
-		PFNTHREADPROC m_pfnThreadProc;	// Callback function for worker threads
-		LPVOID m_pThreadParams;			// Thread parameter for worker threads
-		HANDLE m_hThread;				// Handle of this thread
-		UINT m_nThreadID;				// ID of this thread
-		DWORD m_dwThreadID;				// ID of this thread
-		HACCEL m_hAccel;				// handle to the accelerator table
-		CWnd* m_pWndAccel;				// pointer to the window for accelerator keys
-
-	};
-
-	///////////////////////////////////
-	// Declaration of the CWinApp class
-	//
-	class CWinApp : public CWinThread
-	{
-		// Provide these access to CWinApp's private members:
-		friend class CDC;
-		friend class CDialog;
-		friend class CFrame;
-		friend class CGDIObject;
-		friend class CImageList;
-		friend class CMenu;
-		friend class CMenuBar;
-		friend class CPropertyPage;
-		friend class CPropertySheet;
-		friend class CTaskDialog;
-		friend class CWinThread;
-		friend class CWnd;
-		friend CWinApp& GetApp();
-
-		typedef Shared_Ptr<TLSData> TLSDataPtr;
-
-	public:
-		CWinApp();
-		virtual ~CWinApp();
-
-		// Overridables
-		virtual BOOL InitInstance();
-		virtual int Run();
-
-		// Operations
-		HINSTANCE GetInstanceHandle() const { return m_hInstance; }
-		HINSTANCE GetResourceHandle() const { return (m_hResource ? m_hResource : m_hInstance); }
-		HCURSOR LoadCursor(LPCTSTR lpszResourceName) const;
-		HCURSOR LoadCursor(int nIDCursor) const;
-		HCURSOR LoadStandardCursor(LPCTSTR lpszCursorName) const;
-		HICON	LoadIcon(LPCTSTR lpszResourceName) const;
-		HICON	LoadIcon(int nIDIcon) const;
-		HICON   LoadStandardIcon(LPCTSTR lpszIconName) const;
-		HANDLE  LoadImage(LPCTSTR lpszResourceName, UINT uType, int cx, int  cy, UINT fuLoad = LR_DEFAULTCOLOR) const;
-		HANDLE  LoadImage(int nIDImage, UINT uType, int cx, int cy, UINT fuLoad = LR_DEFAULTCOLOR) const;
-		HCURSOR SetCursor(HCURSOR hCursor) const;
-		void	SetResourceHandle(HINSTANCE hResource);
-
-	private:
-		CWinApp(const CWinApp&);				// Disable copy construction
-		CWinApp& operator = (const CWinApp&);	// Disable assignment operator
-
-		CDC_Data* GetCDCDataFromMap(HDC hDC);
-		CGDI_Data* GetCGDIDataFromMap(HGDIOBJ hObject);
-		CIml_Data* GetCImlDataFromMap(HIMAGELIST himl);
-#ifndef _WIN32_WCE
-		CMenu_Data* GetCMenuDataFromMap(HMENU hMenu);
-#endif
-
-		CWnd* GetCWndFromMap(HWND hWnd);
-		TLSData* GetTlsData() const;
-		void	SetCallback();
-		TLSData* SetTlsData();
-		static CWinApp* SetnGetThis(CWinApp* pThis = 0);
-
-		std::map<HDC, CDC_Data*, CompareHDC> m_mapCDCData;
-		std::map<HGDIOBJ, CGDI_Data*, CompareGDI> m_mapCGDIData;
-		std::map<HIMAGELIST, CIml_Data*, CompareHIMAGELIST> m_mapCImlData;
-#ifndef _WIN32_WCE
-		std::map<HMENU, CMenu_Data*, CompareHMENU> m_mapCMenuData;
-#endif
-
-		std::map<HWND, CWnd*, CompareHWND> m_mapHWND;		// maps window handles to CWnd objects
-		std::vector<TLSDataPtr> m_vTLSData;		// vector of TLSData smart pointers, one for each thread
-		CCriticalSection m_csMapLock;	// thread synchronisation for m_mapHWND
-		CCriticalSection m_csTLSLock;	// thread synchronisation for m_vTLSData
-		CCriticalSection m_csAppStart;	// thread synchronisation for application startup
-		HINSTANCE m_hInstance;			// handle to the applications instance
-		HINSTANCE m_hResource;			// handle to the applications resources
-		DWORD m_dwTlsData;				// Thread Local Storage data
-		WNDPROC m_Callback;				// callback address of CWnd::StaticWndowProc
-
-	};
-
-}
-
-#include "wxx_winutils.h"
-#include "wxx_cstring.h"
-
-
-namespace Win32xx
-{
-	////////////////////////////////
-	// Declaration of the CWnd class
-	//
-	class CWnd : public CObject
-	{
-	friend class CMDIChild;
-	friend class CDialog;
-	friend class CPropertyPage;
-	friend class CTaskDialog;
-	friend class CWinApp;
-	friend class CWinThread;
-
-	public:
-		CWnd();				// Constructor
-		virtual ~CWnd();	// Destructor
-
-		// These virtual functions can be overridden
-		virtual BOOL Attach(HWND hWnd);
-		virtual BOOL AttachDlgItem(UINT nID, HWND hwndParent);
-		virtual void CenterWindow() const;
-		virtual HWND Create(HWND hParent = NULL);
-		virtual HWND CreateEx(DWORD dwExStyle, LPCTSTR lpszClassName, LPCTSTR lpszWindowName, 
-		                      DWORD dwStyle, int x, int y, int nWidth, int nHeight, HWND hWndParent, 
-							  HMENU nIDorHMenu, LPVOID lpParam = NULL);
-		virtual HWND CreateEx(DWORD dwExStyle, LPCTSTR lpszClassName, LPCTSTR lpszWindowName, 
-		                      DWORD dwStyle, const RECT& rc, HWND hWndParent, UINT nID, LPVOID lpParam = NULL);
-		virtual void Destroy();
-		virtual HWND Detach();
-		static  CWnd* GetCWndPtr(HWND hWnd);
-		virtual HICON SetIconLarge(int nIcon);
-		virtual HICON SetIconSmall(int nIcon);
-
-		// Attributes
-		HWND GetHwnd() const				{ return m_hWnd; }
-		WNDPROC GetPrevWindowProc() const	{ return m_PrevWindowProc; }
-
-		// Wrappers for Win32 API functions
-		// These functions aren't virtual, and shouldn't be overridden
-		HDC   BeginPaint(PAINTSTRUCT& ps) const;
-		BOOL  BringWindowToTop() const;
-		LRESULT CallWindowProc(WNDPROC lpPrevWndFunc, UINT Msg, WPARAM wParam, LPARAM lParam) const;
-		BOOL  CheckDlgButton(int nIDButton, UINT uCheck) const;
-		BOOL  CheckRadioButton(int nIDFirstButton, int nIDLastButton, int nIDCheckButton) const;
-		CWnd  ChildWindowFromPoint(POINT pt) const;
-		BOOL  ClientToScreen(POINT& pt) const;
-		BOOL  ClientToScreen(RECT& rc) const;
-		LRESULT DefWindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam) const;
-		HDWP  DeferWindowPos(HDWP hWinPosInfo, HWND hWndInsertAfter, int x, int y, int cx, int cy, UINT uFlags) const;
-		HDWP  DeferWindowPos(HDWP hWinPosInfo, HWND hWndInsertAfter, const RECT& rc, UINT uFlags) const;
-		BOOL  DrawMenuBar() const;
-		BOOL  EnableWindow(BOOL bEnable = TRUE) const;
-		BOOL  EndPaint(PAINTSTRUCT& ps) const;
-		CWnd  GetActiveWindow() const;
-		CWnd  GetAncestor(UINT gaFlag = 3 /*= GA_ROOTOWNER*/) const;
-		CWnd  GetCapture() const;
-		ULONG_PTR GetClassLongPtr(int nIndex) const;
-		CString GetClassName() const;
-		CRect GetClientRect() const;
-		CDC   GetDC() const;
-		CDC   GetDCEx(HRGN hrgnClip, DWORD flags) const;
-		CWnd  GetDesktopWindow() const;
-		int	  GetDlgCtrlID() const;
-		CWnd  GetDlgItem(int nIDDlgItem) const;
-		UINT  GetDlgItemInt(int nIDDlgItem, BOOL* lpTranslated, BOOL bSigned) const;
-		CString GetDlgItemText(int nIDDlgItem) const;
-		CWnd  GetFocus() const;
-		CFont GetFont() const;
-		HICON GetIcon(BOOL bBigIcon) const;
-		CWnd  GetNextDlgGroupItem(HWND hCtl, BOOL bPrevious) const;
-		CWnd  GetNextDlgTabItem(HWND hCtl, BOOL bPrevious) const;
-		CWnd  GetParent() const;
-		BOOL  GetScrollInfo(int fnBar, SCROLLINFO& si) const;
-		CRect GetUpdateRect(BOOL bErase) const;
-		int GetUpdateRgn(HRGN hRgn, BOOL bErase) const;
-		CWnd  GetWindow(UINT uCmd) const;
-		CDC   GetWindowDC() const;
-		LONG_PTR GetWindowLongPtr(int nIndex) const;
-		CRect GetWindowRect() const;
-		CString GetWindowText() const;
-		int   GetWindowTextLength() const;
-		void  Invalidate(BOOL bErase = TRUE) const;
-		BOOL  InvalidateRect(LPCRECT lpRect, BOOL bErase = TRUE) const;
-		BOOL  InvalidateRgn(HRGN hRgn, BOOL bErase = TRUE) const;
-		BOOL  IsChild(HWND hwndChild) const;
-		BOOL  IsDialogMessage(LPMSG lpMsg) const;
-		UINT  IsDlgButtonChecked(int nIDButton) const;
-		BOOL  IsWindow() const;
-		BOOL  IsWindowEnabled() const;
-		BOOL  IsWindowVisible() const;
-		BOOL  KillTimer(UINT_PTR uIDEvent) const;
-		int   MessageBox(LPCTSTR lpText, LPCTSTR lpCaption, UINT uType) const;
-		void  MapWindowPoints(HWND hWndTo, POINT& pt) const;
-		void  MapWindowPoints(HWND hWndTo, RECT& rc) const;
-		void  MapWindowPoints(HWND hWndTo, LPPOINT ptArray, UINT nCount) const;
-		BOOL  MoveWindow(int x, int y, int nWidth, int nHeight, BOOL bRepaint = TRUE) const;
-		BOOL  MoveWindow(const RECT& rc, BOOL bRepaint = TRUE) const;
-		BOOL  PostMessage(UINT uMsg, WPARAM wParam = 0L, LPARAM lParam = 0L) const;
-		BOOL  PostMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) const;
-		BOOL  RedrawWindow(LPCRECT lpRectUpdate = NULL, HRGN hRgn = NULL, UINT flags = RDW_INVALIDATE | RDW_UPDATENOW | RDW_ERASE | RDW_ALLCHILDREN) const;
-		int   ReleaseDC(HDC hDC) const;
-		BOOL  ScreenToClient(POINT& Point) const;
-		BOOL  ScreenToClient(RECT& rc) const;
-		LRESULT SendDlgItemMessage(int nIDDlgItem, UINT Msg, WPARAM wParam, LPARAM lParam) const;
-		LRESULT SendMessage(UINT uMsg, WPARAM wParam = 0L, LPARAM lParam = 0L) const;
-		LRESULT SendMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) const;
-		BOOL  SendNotifyMessage(UINT Msg, WPARAM wParam, LPARAM lParam) const;
-		CWnd  SetActiveWindow() const;
-		CWnd  SetCapture() const;
-		ULONG_PTR SetClassLongPtr(int nIndex, LONG_PTR dwNewLong) const;
-		BOOL  SetDlgItemInt(int nIDDlgItem, UINT uValue, BOOL bSigned) const;
-		BOOL  SetDlgItemText(int nIDDlgItem, LPCTSTR lpString) const;
-		CWnd  SetFocus() const;
-		void  SetFont(HFONT hFont, BOOL bRedraw = TRUE) const;
-		BOOL  SetForegroundWindow() const;
-		HICON SetIcon(HICON hIcon, BOOL bBigIcon) const;
-		CWnd  SetParent(HWND hWndParent) const;
-		BOOL  SetRedraw(BOOL bRedraw = TRUE) const;
-		int   SetScrollInfo(int fnBar, const SCROLLINFO& si, BOOL fRedraw) const;
-		UINT_PTR SetTimer(UINT_PTR nIDEvent, UINT uElapse, TIMERPROC lpTimerFunc) const;
-		LONG_PTR SetWindowLongPtr(int nIndex, LONG_PTR dwNewLong) const;
-		BOOL  SetWindowPos(HWND hWndInsertAfter, int x, int y, int cx, int cy, UINT uFlags) const;
-		BOOL  SetWindowPos(HWND hWndInsertAfter, const RECT& rc, UINT uFlags) const;
-		int   SetWindowRgn(CRgn& Rgn, BOOL bRedraw = TRUE) const;
-		BOOL  SetWindowText(LPCTSTR lpString) const;
-		HRESULT SetWindowTheme(LPCWSTR pszSubAppName, LPCWSTR pszSubIdList) const;
-		BOOL  ShowWindow(int nCmdShow = SW_SHOWNORMAL) const;
-		BOOL  UpdateWindow() const;
-		BOOL  ValidateRect(LPCRECT prc) const;
-		BOOL  ValidateRgn(HRGN hRgn) const;
-		static CWnd WindowFromPoint(POINT pt);
-
-  #ifndef _WIN32_WCE
-		BOOL  CloseWindow() const;
-		int   DlgDirList(LPTSTR lpPathSpec, int nIDListBox, int nIDStaticPath, UINT uFileType) const;
-		int   DlgDirListComboBox(LPTSTR lpPathSpec, int nIDComboBox, int nIDStaticPath, UINT uFiletype) const;
-		BOOL  DlgDirSelectEx(LPTSTR lpString, int nCount, int nIDListBox) const;
-		BOOL  DlgDirSelectComboBoxEx(LPTSTR lpString, int nCount, int nIDComboBox) const;
-		BOOL  DrawAnimatedRects(int idAni, RECT& rcFrom, RECT& rcTo) const;
-		BOOL  DrawCaption(HDC hDC, RECT& rc, UINT uFlags) const;
-		BOOL  EnableScrollBar(UINT uSBflags, UINT uArrows) const;
-		CWnd  GetLastActivePopup() const;
-		CMenu GetMenu() const;
-		int   GetScrollPos(int nBar) const;
-		BOOL  GetScrollRange(int nBar, int& MinPos, int& MaxPos) const;
-		CMenu GetSystemMenu(BOOL bRevert) const;
-		CWnd  GetTopWindow() const;
-		BOOL  GetWindowPlacement(WINDOWPLACEMENT& pWndpl) const;
-		BOOL  HiliteMenuItem(HMENU hMenu, UINT uItemHilite, UINT uHilite) const;
-		BOOL  IsIconic() const;
-		BOOL  IsZoomed() const;
-		BOOL  LockWindowUpdate() const;
-		BOOL  OpenIcon() const;
-		void  Print(HDC hDC, DWORD dwFlags) const;
-		BOOL  SetMenu(HMENU hMenu) const;
-		BOOL  ScrollWindow(int XAmount, int YAmount, LPCRECT lprcScroll, LPCRECT lprcClip) const;
-		int   ScrollWindowEx(int dx, int dy, LPCRECT lprcScroll, LPCRECT lprcClip, HRGN hrgnUpdate, LPRECT lprcUpdate, UINT flags) const;
-		int   SetScrollPos(int nBar, int nPos, BOOL bRedraw) const;
-		BOOL  SetScrollRange(int nBar, int nMinPos, int nMaxPos, BOOL bRedraw) const;
-		BOOL  SetWindowPlacement(const WINDOWPLACEMENT& wndpl) const;
-		BOOL  ShowOwnedPopups(BOOL fShow) const;
-		BOOL  ShowScrollBar(int nBar, BOOL bShow) const;
-		BOOL  ShowWindowAsync(int nCmdShow) const;
-		BOOL  UnLockWindowUpdate() const;
-		CWnd  WindowFromDC(HDC hDC) const;
-
-    #ifndef WIN32_LEAN_AND_MEAN
-		void  DragAcceptFiles(BOOL fAccept) const;
-    #endif
-  #endif
-
-		static LRESULT CALLBACK StaticWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-		operator HWND() const { return GetHwnd(); }
-
-	protected:
-		// Override these functions as required
-		virtual LRESULT FinalWindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam);
-		virtual void OnAttach();
-		virtual BOOL OnCommand(WPARAM wParam, LPARAM lParam);
-		virtual void OnClose();
-		virtual int  OnCreate(LPCREATESTRUCT pcs);
-		virtual void OnDestroy();
-		virtual void OnDraw(CDC& dc);
-		virtual BOOL OnEraseBkgnd(CDC& dc);
-		virtual void OnInitialUpdate();
-		virtual void OnMenuUpdate(UINT nID);
-		virtual LRESULT OnMessageReflect(UINT uMsg, WPARAM wParam, LPARAM lParam);
-		virtual LRESULT OnNotify(WPARAM wParam, LPARAM lParam);
-		virtual LRESULT OnNotifyReflect(WPARAM wParam, LPARAM lParam);
-		virtual void PreCreate(CREATESTRUCT& cs);
-		virtual void PreRegisterClass(WNDCLASS& wc);
-		virtual BOOL PreTranslateMessage(MSG* pMsg);
-		virtual LRESULT WndProc(UINT uMsg, WPARAM wParam, LPARAM lParam);
-		virtual LRESULT WndProcDefault(UINT uMsg, WPARAM wParam, LPARAM lParam);
-
-		HWND m_hWnd;					// handle to this object's window
-
-	private:
-		CWnd(const CWnd&);				// Disable copy construction
-		CWnd& operator = (const CWnd&);	// Disable assignment operator
-		CWnd(HWND hWnd);				// Private constructor used internally
-
-		void AddToMap();
-		void Cleanup();
-		LRESULT MessageReflect(UINT uMsg, WPARAM wParam, LPARAM lParam);
-		BOOL RegisterClass(WNDCLASS& wc);
-		BOOL RemoveFromMap();
-		void SetHwnd(HWND hWnd)			{ m_hWnd = hWnd; }
-		void Subclass(HWND hWnd);
-
-		WNDPROC	m_PrevWindowProc;
-
-	}; // class CWnd
-
-}
-
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-#include "wxx_archive.h"
+#include "wxx_wincore0.h"
 #include "wxx_gdi.h"
-#include "wxx_menu.h"
-#include "wxx_imagelist.h"
+#ifndef _WIN32_WCE
+  #include "wxx_menu.h"
+#endif
+#include "wxx_ddx.h"
+#include "wxx_appcore.h"
+
 
 namespace Win32xx
 {
-
-	//////////////////////////////////////////
-	// Definitions for the CWinException class
-	//
-	inline CWinException::CWinException(LPCTSTR pszText) throw () : m_Error(::GetLastError()), m_pszText(pszText)
-	{
-		memset(m_szErrorString, 0, MAX_STRING_SIZE * sizeof(TCHAR));
-
-		DWORD dwFlags = FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS;
-		::FormatMessage(dwFlags, NULL, m_Error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), m_szErrorString, MAX_STRING_SIZE-1, NULL);
-	}
-
-	inline DWORD CWinException::GetError() const throw ()
-	// Retrieves the last error code value.
-	{
-		return m_Error;
-	}
-
-	inline LPCTSTR CWinException::GetErrorString() const throw ()
-	// Retrieves the error string from GetLastError.
-	{
-		return m_szErrorString;
-	}
-
-	inline LPCTSTR CWinException::GetText() const throw ()
-	// Retrieves the string specified in the constructor.
-	{
-		return m_pszText;
-	}
-
-	inline const char * CWinException::what() const throw ()
-	// Sends the last error string to the debugger (typically displayed in the IDE's output window).
-	{
-		::OutputDebugString(m_szErrorString);
-		return "CWinException thrown";
-	}
-
-	///////////////////////////////////////
-	// Definitions for the CObject class
-	//
-	inline void CObject::Serialize(CArchive& /* ar */ )
-	{
-	
-	//	if (ar.IsStoring())
-	//	{
-	//		// Store a member variable in the archive
-	//		ar << m_SomeValue;
-	//	}
-	//	else
-	//	{
-	//		// Load a member variable from the archive
-	//		ar >> m_SomeValue;
-	//	}
-
-	}
-
-	///////////////////////////////////////
-	// Definitions for the CWinThread class
-	//
-	inline CWinThread::CWinThread() : m_pfnThreadProc(0), m_pThreadParams(0), m_hThread(0),
-		                               m_nThreadID(0), m_hAccel(0), m_pWndAccel(0)
-	// Override CWinThread and use this constructor for GUI threads.
-	// InitInstance will be called when the thread runs.
-	{
-	}
-
-	inline CWinThread::CWinThread(PFNTHREADPROC pfnThreadProc, LPVOID pParam) : m_pfnThreadProc(0),
-		                m_pThreadParams(0), m_hThread(0), m_nThreadID(0), m_hAccel(0), m_pWndAccel(0)
-	// Use CWinThread directly and call this constructor for worker threads.
-	// Specify a pointer to the function to run when the thread starts.
-	// Specifying pParam for a worker thread is optional.
-	{
-		m_pfnThreadProc = pfnThreadProc;
-		m_pThreadParams = pParam;
-	}
-
-	inline CWinThread::~CWinThread()
-	{
-		if (m_hThread)
-		{
-			// A thread's state is set to signalled when the thread terminates.
-			// If your thread is still running at this point, you have a bug.
-			if (WaitForSingleObject(m_hThread, 0) != 0)
-			{
-				TRACE("*** Error *** Ending CWinThread before ending its thread\n");
-				assert(FALSE);
-			}
-
-			// Close the thread's handle
-			::CloseHandle(m_hThread);
-		}
-	}
-
-	inline void CWinThread::CreateThread(unsigned initflag /* = 0 */, unsigned stack_size/* = 0 */, LPSECURITY_ATTRIBUTES pSecurityAttributes /*= NULL*/)
-	{
-		// Valid argument values:
-		// initflag					Either CREATE_SUSPENDED or 0
-		// stack_size				Either the stack size or 0
-		// pSecurityAttributes		Either a pointer to SECURITY_ATTRIBUTES or 0
-
-		if (NULL == m_pfnThreadProc) m_pfnThreadProc = CWinThread::StaticThreadProc;
-		if (NULL == m_pThreadParams) m_pThreadParams = this;
-
-#ifdef _WIN32_WCE
-		m_hThread = (HANDLE)::CreateThread(pSecurityAttributes, stack_size, (LPTHREAD_START_ROUTINE)m_pfnThreadProc, m_pThreadParams, initflag, &m_dwThreadID);
-#else
-		m_hThread = (HANDLE)::_beginthreadex(pSecurityAttributes, stack_size, m_pfnThreadProc, m_pThreadParams, initflag, &m_nThreadID);
-#endif
-
-		if (m_hThread == 0)
-			throw CWinException(_T("Failed to create thread"));
-	}
-
-	inline CWnd* CWinThread::GetMainWnd() const
-	// Retrieves a pointer to the main window for this thread.
-	// Note: CFrame set's itself as the main window of its thread
-	{
-		TLSData* pTLSData = GetApp().GetTlsData();
-		return pTLSData->pMainWnd;
-	}
-
-	inline HANDLE CWinThread::GetThread() const
-	{
-		assert(m_hThread);
-		return m_hThread;
-	}
-
-	inline int CWinThread::GetThreadID() const
-	{
-		assert(m_hThread);
-
-#ifdef _WIN32_WCE
-		return m_dwThreadID;
-#endif
-
-		return m_nThreadID;
-	}
-
-	inline int CWinThread::GetThreadPriority() const
-	{
-		assert(m_hThread);
-		return ::GetThreadPriority(m_hThread);
-	}
-
-	inline BOOL CWinThread::InitInstance()
-	{
-		// Override this function to perform tasks when the thread starts.
-
-		// return TRUE to run a message loop, otherwise return FALSE.
-		// A thread with a window must run a message loop.
-		return FALSE;
-	}
-
-	inline int CWinThread::MessageLoop()
-	{
-		// This gets any messages queued for the application, and dispatches them.
-		MSG Msg;
-		ZeroMemory(&Msg, sizeof(MSG));
-		int status = 1;
-		LONG lCount = 0;
-
-		while (status != 0)
-		{
-			// While idle, perform idle processing until OnIdle returns FALSE
-			// Exclude some messages to avoid calling OnIdle excessively
-			while (!::PeekMessage(&Msg, 0, 0, 0, PM_NOREMOVE) &&
-								(Msg.message != WM_TIMER) &&
-								(Msg.message != WM_MOUSEMOVE) &&
-								(Msg.message != WM_SETCURSOR) &&
-								OnIdle(lCount) != FALSE  )
-			{
-				++lCount;
-			}
-
-
-			lCount = 0;
-
-			// Now wait until we get a message
-			if ((status = ::GetMessage(&Msg, NULL, 0, 0)) == -1)
-				return -1;
-
-			if (!PreTranslateMessage(Msg))
-			{
-				::TranslateMessage(&Msg);
-				::DispatchMessage(&Msg);
-			}
-
-		}
-
-		return LOWORD(Msg.wParam);
-	}
-
-	inline BOOL CWinThread::OnIdle(LONG lCount)
-	{
-		UNREFERENCED_PARAMETER(lCount);
-
-		return FALSE;
-	}
-
-	inline BOOL CWinThread::PreTranslateMessage(MSG Msg)
-	{
-		// This functions is called by the MessageLoop. It processes the
-		// keyboard accelerator keys and calls CWnd::PreTranslateMessage for
-		// keyboard and mouse events.
-
-		BOOL Processed = FALSE;
-
-		// only pre-translate mouse and keyboard input events
-		if ((Msg.message >= WM_KEYFIRST && Msg.message <= WM_KEYLAST) ||
-			(Msg.message >= WM_MOUSEFIRST && Msg.message <= WM_MOUSELAST))
-		{
-			// Process keyboard accelerators
-			if (GetAcceleratorsWindow() && ::TranslateAccelerator(*GetAcceleratorsWindow(), GetAccelerators(), &Msg))
-				Processed = TRUE;
-			else
-			{
-				// Search the chain of parents for pretranslated messages.
-				for (HWND hWnd = Msg.hwnd; hWnd != NULL; hWnd = ::GetParent(hWnd))
-				{
-					CWnd* pWnd = GetApp().GetCWndFromMap(hWnd);
-					if (pWnd)
-					{
-						Processed = pWnd->PreTranslateMessage(&Msg);
-						if(Processed)
-							break;
-					}
-				}
-			}
-		}
-
-		return Processed;
-	}
-
-	inline BOOL CWinThread::PostThreadMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) const
-	// Posts a message to the thread. The message will reach the MessageLoop, but 
-	//  will not call a CWnd's WndProc.
-	{
-		assert(m_hThread);
-		return ::PostThreadMessage(GetThreadID(), uMsg, wParam, lParam);
-	}
-
-	inline DWORD CWinThread::ResumeThread() const
-	// Resumes a thread that has been suspended, or created with the CREATE_SUSPENDED flag.
-	{
-		assert(m_hThread);
-		return ::ResumeThread(m_hThread);
-	}
-
-	inline void CWinThread::SetAccelerators(HACCEL hAccel, CWnd* pWndAccel)
-	// hAccel is the handle of the accelerator table
-	// pWndAccel is the window pointer for translated messages
-	{
-		m_pWndAccel = pWndAccel;
-		m_hAccel = hAccel;
-	}
-
-	inline void CWinThread::SetMainWnd(CWnd* pWnd)
-	// Sets the main window for this thread.
-	// Note: CFrame set's itself as the main window of its thread
-	{
-		TLSData* pTLSData = GetApp().SetTlsData();
-		pTLSData->pMainWnd = pWnd;
-	}
-
-	inline BOOL CWinThread::SetThreadPriority(int nPriority) const
-	{
-		assert(m_hThread);
-		return ::SetThreadPriority(m_hThread, nPriority);
-	}
-
-	inline DWORD CWinThread::SuspendThread() const
-	{
-		assert(m_hThread);
-		return ::SuspendThread(m_hThread);
-	}
-
-	inline UINT WINAPI CWinThread::StaticThreadProc(LPVOID pCThread)
-	// When the thread starts, it runs this function.
-	{
-		// Get the pointer for this CMyThread object
-		CWinThread* pThread = static_cast<CWinThread*>(pCThread);
-		assert(pThread);
-
-		if (pThread->InitInstance())
-		{
-			GetApp().SetTlsData();
-			return pThread->MessageLoop();
-		}
-
-		return 0;
-	}
-
-
-	////////////////////////////////////
-	// Definitions for the CWinApp class
-	//
-
-	// To begin Win32++, inherit your application class from this one.
-	// You must run only one instance of the class inherited from this.
-	inline CWinApp::CWinApp() : m_Callback(NULL)
-	{
-		m_csAppStart.Lock();
-		assert( 0 == SetnGetThis() );	// Test if this is the first instance of CWinApp
-
-		m_dwTlsData = ::TlsAlloc();
-		if (m_dwTlsData == TLS_OUT_OF_INDEXES)
-		{
-			// We only get here in the unlikely event that all TLS indexes are already allocated by this app
-			// At least 64 TLS indexes per process are allowed. Win32++ requires only one TLS index.
-			m_csAppStart.Release();
-			throw CWinException(_T("CWinApp::CWinApp  Failed to allocate TLS Index"));
-		}
-
-		SetnGetThis(this);
-		m_csAppStart.Release();
-
-		// Set the instance handle
-#ifdef _WIN32_WCE
-		m_hInstance = (HINSTANCE)GetModuleHandle(0);
-#else
-		MEMORY_BASIC_INFORMATION mbi;
-		ZeroMemory(&mbi, sizeof(MEMORY_BASIC_INFORMATION));
-		static int Address = 0;
-		VirtualQuery( &Address, &mbi, sizeof(mbi) );
-		assert(mbi.AllocationBase);
-		m_hInstance = (HINSTANCE)mbi.AllocationBase;
-#endif
-
-		m_hResource = m_hInstance;
-		SetCallback();
-	}
-
-	inline CWinApp::~CWinApp()
-	{
-		// Forcibly destroy any remaining windows now. Windows created from
-		//  static CWnds or dangling pointers are destroyed here.
-		std::map<HWND, CWnd*, CompareHWND>::iterator m;
-		for (m = m_mapHWND.begin(); m != m_mapHWND.end(); ++m)
-		{
-			HWND hWnd = (*m).first;
-			if (::IsWindow(hWnd))
-			{
-				::DestroyWindow(hWnd);
-			}
-		}
-
-		// Do remaining tidy up
-		m_vTLSData.clear();
-		if (m_dwTlsData != TLS_OUT_OF_INDEXES)
-		{
-			::TlsSetValue(m_dwTlsData, NULL);
-			::TlsFree(m_dwTlsData);
-		}
-
-		SetnGetThis(reinterpret_cast<CWinApp*>(-1));
-	}
-
-	inline CDC_Data* CWinApp::GetCDCDataFromMap(HDC hDC)
-	{
-		std::map<HDC, CDC_Data*, CompareHDC>::iterator m;
-
-		// Find the CDC data mapped to this HDC
-		CDC_Data* pCDCData = 0;
-		m_csMapLock.Lock();
-		m = m_mapCDCData.find(hDC);
-
-		if (m != m_mapCDCData.end())
-			pCDCData = m->second;
-
-		m_csMapLock.Release();
-		return pCDCData;
-	}
-
-	inline CGDI_Data* CWinApp::GetCGDIDataFromMap(HGDIOBJ hObject)
-	{
-		std::map<HGDIOBJ, CGDI_Data*, CompareGDI>::iterator m;
-
-		// Find the CGDIObject data mapped to this HGDIOBJ
-		CGDI_Data* pCGDIData = 0;
-		m_csMapLock.Lock();
-		m = m_mapCGDIData.find(hObject);
-
-		if (m != m_mapCGDIData.end())
-			pCGDIData = m->second;
-
-		m_csMapLock.Release();
-		return pCGDIData;
-	}
-
-	inline CIml_Data* CWinApp::GetCImlDataFromMap(HIMAGELIST himl)
-	{
-		std::map<HIMAGELIST, CIml_Data*, CompareHIMAGELIST>::iterator m;
-
-		// Find the CImageList data mapped to this HIMAGELIST
-		CIml_Data* pCImlData = 0;
-		m_csMapLock.Lock();
-		m = m_mapCImlData.find(himl);
-
-		if (m != m_mapCImlData.end())
-			pCImlData = m->second;
-
-		m_csMapLock.Release();
-		return pCImlData;
-	}
-
-#ifndef _WIN32_WCE
-	inline CMenu_Data* CWinApp::GetCMenuDataFromMap(HMENU hMenu)
-	{
-		std::map<HMENU, CMenu_Data*, CompareHMENU>::iterator m;
-
-		// Find the CMenu data mapped to this HMENU
-		CMenu_Data* pCMenuData = 0;
-		m_csMapLock.Lock();
-		m = m_mapCMenuData.find(hMenu);
-
-		if (m != m_mapCMenuData.end())
-			pCMenuData = m->second;
-
-		m_csMapLock.Release();
-		return pCMenuData;
-	}
-#endif
-
-	inline CWnd* CWinApp::GetCWndFromMap(HWND hWnd)
-	{
-		// Allocate an iterator for our HWND map
-		std::map<HWND, CWnd*, CompareHWND>::iterator m;
-
-		// Find the CWnd pointer mapped to this HWND
-		CWnd* pWnd = 0;
-		m_csMapLock.Lock();
-		m = m_mapHWND.find(hWnd);
-
-		if (m != m_mapHWND.end())
-			pWnd = m->second;
-
-		m_csMapLock.Release();
-		return pWnd;
-	}
-
-	inline TLSData* CWinApp::GetTlsData() const
-	{
-		return static_cast<TLSData*>(TlsGetValue(m_dwTlsData));
-	}
-
-	inline BOOL CWinApp::InitInstance()
-	{
-		// InitInstance contains the initialization code for your application
-		// You should override this function with the code to run when the application starts.
-
-		// return TRUE to indicate success. FALSE will end the application
-		return TRUE;
-	}
-
-	inline HCURSOR CWinApp::LoadCursor(LPCTSTR lpszResourceName) const
-	// Loads the cursor resource from the resource script (resource.rc)
-	{
-		return ::LoadCursor(GetResourceHandle(), lpszResourceName);
-	}
-
-	inline HCURSOR CWinApp::LoadCursor(int nIDCursor) const
-	// Loads the cursor resource from the resource script (resource.rc)
-	{
-		return ::LoadCursor(GetResourceHandle(), MAKEINTRESOURCE (nIDCursor));
-	}
-
-	inline HCURSOR CWinApp::LoadStandardCursor(LPCTSTR lpszCursorName) const
-	// Returns the handle of a standard cursor. Standard cursors include:
-	// IDC_APPSTARTING, IDC_ARROW, IDC_CROSS, IDC_HAND, IDC_HELP, IDC_IBEAM, IDC_NO, IDC_SIZEALL,
-	// IDC_SIZENESW, IDC_SIZENS, IDC_SIZENWSE, IDC_SIZEWE, IDC_UPARROW, IDC_WAIT
-	{
-		return ::LoadCursor(0, lpszCursorName);
-	}
-
-	inline HICON CWinApp::LoadIcon(LPCTSTR lpszResourceName) const
-	// Loads the icon resource whose size conforms to the SM_CXICON and SM_CYICON system metric values
-	// For other icon sizes, use the LoadImage windows API function.
-	{
-		return ::LoadIcon(GetResourceHandle(), lpszResourceName);
-	}
-
-	inline HICON CWinApp::LoadIcon(int nIDIcon) const
-	// Loads the icon resource whose size conforms to the SM_CXICON and SM_CYICON system metric values
-	{
-		return ::LoadIcon(GetResourceHandle(), MAKEINTRESOURCE (nIDIcon));
-	}
-
-	inline HICON CWinApp::LoadStandardIcon(LPCTSTR lpszIconName) const
-	// Returns the handle of a standard Icon. Standard Icons include:
-	// IDI_APPLICATION, IDI_ASTERISK, IDI_ERROR, IDI_EXCLAMATION,
-	// IDI_HAND, IDI_INFORMATION, IDI_QUESTION, IDI_WARNING
-	{
-		return ::LoadIcon(0, lpszIconName);
-	}
-
-	inline HANDLE CWinApp::LoadImage(LPCTSTR lpszResourceName, UINT uType, int cx, int cy, UINT fuLoad) const
-	// Loads an icon, cursor, animated cursor, or bitmap image
-	// uType is the image type. It can be IMAGE_BITMAP, IMAGE_CURSOR or IMAGE_ICON
-	// cx and cy are the desired width and height in pixels
-	// fuLoad can be LR_DEFAULTCOLOR, LR_CREATEDIBSECTION, LR_DEFAULTSIZE, LR_LOADFROMFILE,
-	//   LR_LOADMAP3DCOLORS, R_LOADTRANSPARENT, LR_MONOCHROME, LR_SHARED, LR_VGACOLOR.
-	{
-		return ::LoadImage(GetResourceHandle(), lpszResourceName, uType, cx, cy, fuLoad);
-	}
-
-	inline HANDLE CWinApp::LoadImage(int nIDImage, UINT uType, int cx, int cy, UINT fuLoad) const
-	// Loads an icon, cursor, animated cursor, or bitmap
-	// uType is the image type. It can be IMAGE_BITMAP, IMAGE_CURSOR or IMAGE_ICON
-	// cx and cy are the desired width and height in pixels
-	// fuLoad can be LR_DEFAULTCOLOR, LR_CREATEDIBSECTION, LR_DEFAULTSIZE, LR_LOADFROMFILE,
-	//   LR_LOADMAP3DCOLORS, R_LOADTRANSPARENT, LR_MONOCHROME, LR_SHARED, LR_VGACOLOR.
-	// The image should be destroyed unless it is loaded with LR_SHARED
-	{
-		return ::LoadImage(GetResourceHandle(), MAKEINTRESOURCE (nIDImage), uType, cx, cy, fuLoad);
-	}
-
-	inline int CWinApp::Run()
-	{
-		// InitInstance runs the App's initialization code
-		if (InitInstance())
-		{
-			// Dispatch the window messages
-			return MessageLoop();
-		}
-		else
-		{
-			TRACE("InitInstance failed!  Terminating program\n");
-			::PostQuitMessage(-1);
-			return -1;
-		}
-	}
-
-	inline void CWinApp::SetCallback()
-	{
-		// Registers a temporary window class so we can get the callback
-		// address of CWnd::StaticWindowProc.
-		// This technique works for all Window versions, including WinCE.
-
-		WNDCLASS wcDefault;
-		ZeroMemory(&wcDefault, sizeof(WNDCLASS));
-
-		LPCTSTR szClassName		= _T("Win32++ Temporary Window Class");
-		wcDefault.hInstance		= GetInstanceHandle();
-		wcDefault.lpfnWndProc	= CWnd::StaticWindowProc;
-		wcDefault.lpszClassName = szClassName;
-
-		::RegisterClass(&wcDefault);
-
-		// Retrieve the class information
-		ZeroMemory(&wcDefault, sizeof(wcDefault));
-		::GetClassInfo(GetInstanceHandle(), szClassName, &wcDefault);
-
-		// Save the callback address of CWnd::StaticWindowProc
-		assert(wcDefault.lpfnWndProc);	// Assert fails when running UNICODE build on ANSI OS.
-		m_Callback = wcDefault.lpfnWndProc;
-		::UnregisterClass(szClassName, GetInstanceHandle());
-	}
-
-	inline HCURSOR CWinApp::SetCursor(HCURSOR hCursor) const
-	// Sets the current cursor and returns the previous one.
-	// Note:The cursor will be set to the window's class cursor (if one is set) each time the
-	//  mouse is moved over the window. You can specify different cursors for different
-	//  conditions while processing WM_SETCURSOR
-	{
-		return ::SetCursor(hCursor);
-	}
-
-	inline CWinApp* CWinApp::SetnGetThis(CWinApp* pThis /*= 0*/)
-	{
-		// This function stores the 'this' pointer in a static variable.
-		// Once stored, it can be used later to return the 'this' pointer.
-		// CWinApp's constructor calls this function and sets the static variable.
-		// CWinApp's destructor calls this function with a value of -1.
-
-		static CWinApp* pWinApp = 0;
-
-		if (reinterpret_cast<CWinApp*>(-1) == pThis)
-			pWinApp = 0;
-		else if (!pWinApp)
-			pWinApp = pThis;
-
-		return pWinApp;
-	}
-
-	inline void CWinApp::SetResourceHandle(HINSTANCE hResource)
-	{
-		// This function can be used to load a resource dll.
-		// A resource dll can be used to define resources in different languages.
-		// To use this function, place code like this in InitInstance
-		//
-		// HINSTANCE hResource = LoadLibrary(_T("MyResourceDLL.dll"));
-		// SetResourceHandle(hResource);
-
-		m_hResource = hResource;
-	}
-
-	inline TLSData* CWinApp::SetTlsData()
-	{
-		TLSData* pTLSData = GetTlsData();
-		
-		if (NULL == pTLSData)
-		{
-			pTLSData = new TLSData;
-
-			m_csTLSLock.Lock();
-			m_vTLSData.push_back(pTLSData);	// store as a Shared_Ptr
-			m_csTLSLock.Release();
-
-			::TlsSetValue(m_dwTlsData, pTLSData);
-		}
-
-		return pTLSData;
-	}
-
 
 	////////////////////////////////////////
 	// Definitions for the CWnd class
@@ -1383,7 +176,7 @@ namespace Win32xx
 	{
 		// A private constructor, used internally.
 
-		SetHwnd(hWnd);
+		m_hWnd = hWnd;
 	}
 
 	inline CWnd::~CWnd()
@@ -1395,11 +188,17 @@ namespace Win32xx
 	inline void CWnd::AddToMap()
 	// Store the window handle and CWnd pointer in the HWND map
 	{
-		assert( &GetApp() );
+		// The framework must be started
+		assert(&GetApp());
+
+		// This HWND is should not be in the map yet
+		assert (NULL == GetApp().GetCWndFromMap(*this));
+
+		// Remove any old map entry for this CWnd (required when the CWnd is reused)
+		RemoveFromMap();
+
+		// Add the (HWND, CWnd*) pair to the map
 		GetApp().m_csMapLock.Lock();
-
-		assert(!GetApp().GetCWndFromMap(*this));
-
 		GetApp().m_mapHWND.insert(std::make_pair(GetHwnd(), this));
 		GetApp().m_csMapLock.Release();
 	}
@@ -1415,7 +214,6 @@ namespace Win32xx
 		// Note: Perform the attach from the same thread as the window's message loop
 		GetApp().SetTlsData();
 
-		Cleanup();			// Cleanup any previous attachment
 		Subclass(hWnd);		// Set the window's callback to CWnd::StaticWindowProc
 
 		OnAttach();
@@ -1465,7 +263,7 @@ namespace Win32xx
 		::SystemParametersInfo(SPI_GETWORKAREA, 0, &rcDesktop, 0);
 
 		// Get the parent window dimensions (parent could be the desktop)
-		if (GetParent().GetHwnd() != NULL) rcParent = GetParent().GetWindowRect();
+		if (GetParent().GetHwnd() != 0) rcParent = GetParent().GetWindowRect();
 		else rcParent = rcDesktop;
 
 	#ifndef _WIN32_WCE
@@ -1514,14 +312,18 @@ namespace Win32xx
 	inline void CWnd::Cleanup()
 	// Returns the CWnd to its default state
 	{
+		// Window should already be destroyed if managed 
+		assert( (GetCWndPtr(*this) != this) || (!IsWindow()) );
+
+
 		if ( &GetApp() )
 			RemoveFromMap();
 
-		SetHwnd(NULL);
-		m_PrevWindowProc = NULL;
+		m_hWnd = 0;
+		m_PrevWindowProc = 0;
 	}
 
-	inline HWND CWnd::Create(HWND hWndParent /* = NULL */)
+	inline HWND CWnd::Create(HWND hWndParent /* = 0 */)
 	// Creates the window. This is the default method of window creation.
 	{
 		// Test if Win32++ has been started
@@ -1545,7 +347,7 @@ namespace Win32xx
 
 		// Set a reasonable default window style
 		DWORD dwOverlappedStyle = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
-		cs.style = WS_VISIBLE | ((hWndParent)? WS_CHILD : dwOverlappedStyle);
+		cs.style = WS_VISIBLE | ((hWndParent)? WS_CHILD : dwOverlappedStyle );
 
 		// Set a reasonable default window position
 		if (NULL == hWndParent)
@@ -1600,10 +402,7 @@ namespace Win32xx
 	// Creates the window by specifying all the window creation parameters
 	{
 		assert( &GetApp() );		// Test if Win32++ has been started
-		assert( !IsWindow() );	// Only one window per CWnd instance allowed
-
-		// Prepare the CWnd if it has been reused
-		Destroy();
+		assert( !IsWindow() );		// Only one window per CWnd instance allowed
 
 		// Ensure a window class is registered
 		CString ClassName;
@@ -1630,11 +429,18 @@ namespace Win32xx
 
 		// Store the CWnd pointer in thread local storage
 		pTLSData->pWnd = this;
+		m_hWnd = 0;
 
 		// Create window
 		HWND hWnd = ::CreateWindowEx(dwExStyle, ClassName, lpszWindowName, dwStyle, x, y, nWidth, nHeight,
 								hWndParent, nIDorHMenu, GetApp().GetInstanceHandle(), lpParam);
 
+		if (hWnd == 0)
+		{
+			// Throw an exception when window creation fails
+			pTLSData->pWnd = NULL;
+			throw CWinException(_T("CreateWindowEx failed"));
+		}
 
 		// Automatically subclass predefined window class types
 		::GetClassInfo(GetApp().GetInstanceHandle(), lpszClassName, &wc);
@@ -1644,14 +450,6 @@ namespace Win32xx
 
 			// Override this to perform tasks after the window is attached.
 			OnAttach();
-		}
-
-		// Now handle window creation failure
-		if (hWnd == 0)
-		{
-			TRACE("*** Failed to create window ***\n");
-			TRACE(SystemErrorMessage(::GetLastError()));
-			assert(hWnd);
 		}
 
 		// Clear the CWnd pointer from TLS
@@ -1689,6 +487,24 @@ namespace Win32xx
 
 		return hWnd;
 	}
+
+#ifndef _WIN32_WCE
+	inline void CWnd::DoDataExchange(CDataExchange& DX)
+	//	This function performs dialog data exchange and dialog data 
+	//	validation using DDX and DDV functions. Typically this is done for
+	//	controls in a dialogs, but controls in any window support DDX and DDV.
+	//	Never call this function directly. It is called by the UpdateData() 
+	//	member function. Call UpdateData() to write data into, or retrieve
+	//	validated data from the controls.  Override this method in the dialog
+	//	or other window that utilize the DDX/DDV functions.
+	{
+		  // Any dialog or window using DDX/DDV for its controls should
+		  // override of this member, and put calls to the DDX and DDV functions
+		  // there.
+
+		UNREFERENCED_PARAMETER(DX);
+	}
+#endif
 
 	inline LRESULT CWnd::FinalWindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 	// Pass messages on to the appropriate default window procedure
@@ -1776,10 +592,8 @@ namespace Win32xx
 	{
 		assert(IsWindow());
 
-		int nLength = ::GetWindowTextLength(*this);
 		CString str;
-		::GetWindowText(*this, str.GetBuffer(nLength), nLength+1);
-		str.ReleaseBuffer();
+		str.GetWindowText(*this);
 		return str;
 	}
 
@@ -1788,7 +602,7 @@ namespace Win32xx
 	// WM_CLOSE is sent by SendMessage(WM_SYSCOMMAND, SC_CLOSE, 0) or by clicking X
 	//  in the top right corner. Usually, only top level windows receive WM_CLOSE.
 	{
-		::DestroyWindow(*this);
+		Destroy();
 	}
 
 	inline BOOL CWnd::OnCommand(WPARAM wParam, LPARAM lParam)
@@ -1816,7 +630,7 @@ namespace Win32xx
 		// Note:  Window controls are attached.
 	}
 
-	inline int CWnd::OnCreate(LPCREATESTRUCT pcs)
+	inline int CWnd::OnCreate(CREATESTRUCT& cs)
 	{
 		// This function is called when a WM_CREATE message is received
 		// Override it to automatically perform tasks during window creation.
@@ -1825,7 +639,7 @@ namespace Win32xx
 		// Note: Window controls don't call OnCreate. They are sublcassed (attached)
 		//  after their window is created.
 
-		UNREFERENCED_PARAMETER (pcs);
+		UNREFERENCED_PARAMETER (cs);
 		return 0;
 	}
 
@@ -1869,7 +683,7 @@ namespace Win32xx
 		// A function used to call OnMessageReflect. You shouldn't need to call or
 		//  override this function.
 
-		HWND hWnd = NULL;
+		HWND hWnd = 0;
 		switch (uMsg)
 		{
 		case WM_COMMAND:
@@ -1975,8 +789,40 @@ namespace Win32xx
 		return 0L;
 	}
 
+	inline LRESULT CWnd::OnPaint(UINT uMsg, WPARAM wParam, LPARAM lParam)
+	{
+		// Window controls and other subclassed windows are expected to do their own
+		// drawing, so we don't call OnDraw for those.
+
+		// Note: CustomDraw or OwnerDraw are normally used to modify the drawing of
+		//       controls, but overriding OnPaint is also an option.
+		
+		if (!m_PrevWindowProc)
+		{
+			if (::GetUpdateRect(*this, NULL, FALSE))
+			{
+				CPaintDC dc(*this);
+				OnDraw(dc);
+			}
+			else
+			// RedrawWindow can require repainting without an update rect
+			{
+				CClientDC dc(*this);
+				OnDraw(dc);
+			}
+
+			// No more drawing required
+			return 0L;
+		}
+
+		// Allow window controls to do their default drawing
+		return FinalWindowProc(uMsg, wParam, lParam);
+	}
+
 	inline void CWnd::OnMenuUpdate(UINT nID)
-	// Called when menu items are about to be displayed
+	// Called when menu items are about to be displayed. Override this function to 
+	// enable/disable the menu item, or add/remove the check box or radio button
+	// to menu items. 
 	{
 		UNREFERENCED_PARAMETER(nID);
 
@@ -2021,9 +867,9 @@ namespace Win32xx
 		//     To set a small icon for the window, use SetIconSmall.
 	}
 
-	inline BOOL CWnd::PreTranslateMessage(MSG* pMsg)
+	inline BOOL CWnd::PreTranslateMessage(MSG& Msg)
 	{
-		UNREFERENCED_PARAMETER(pMsg);
+		UNREFERENCED_PARAMETER(Msg);
 
 		// Override this function if your class requires input messages to be
 		// translated before normal processing. Function which translate messages
@@ -2161,7 +1007,7 @@ namespace Win32xx
 			pTLSData->pWnd = NULL;
 
 			// Store the CWnd pointer in the HWND map
-			w->SetHwnd(hWnd);
+			w->m_hWnd = hWnd;
 			w->AddToMap();
 		}
 
@@ -2175,10 +1021,56 @@ namespace Win32xx
 		assert(::IsWindow(hWnd));
 
 		m_PrevWindowProc = (WNDPROC)::SetWindowLongPtr(hWnd, GWLP_WNDPROC, (LONG_PTR)CWnd::StaticWindowProc);
-		SetHwnd(hWnd);
+		m_hWnd = hWnd;
 		
 		AddToMap();			// Store the CWnd pointer in the HWND map
 	}
+#ifndef _WIN32_WCE
+	inline BOOL CWnd::UpdateData(CDataExchange& DX, BOOL bRetrieveAndValidate)
+	//	Dialog Data Exchange support. Call this function to retrieve values from
+	//	(bRetrieveAndValidate is TRUE) or assign values to (bRetrieveAndValidate
+	//	is FALSE) a set of controls appearing in DDX/DDV statements in an
+	//	override of the DoDataExchange() member method.
+	//
+	//	Return TRUE if the operation is successful, or FALSE otherwise. If
+	//	called when bRetrieveValidate is TRUE, success means the data has
+	//	been validated.
+	//
+	//	When a dialog box uses dialog data exchange, OnInitDialog() calls
+	//	UpdateData(FALSE) to attach the controls. Typically, OnOK is 
+	//	overridden and calls UpdatData(TRUE) to validate and retrieve the data
+	//	before closing the dialog.
+	{
+		// must not update data before the window is created
+		assert(IsWindow());
+
+		// A critical section which is released when ccs goes out of scope
+		CCriticalSection ccs;
+		ccs.Lock();
+
+		DX.Init(*this, bRetrieveAndValidate);
+
+		BOOL ok = FALSE;  // Remains FALSE if DoDataExchange throws a CUserException
+		try
+		{
+			DoDataExchange(DX);
+			if (DX.GetLastControl() != NULL && DX.GetLastEditControl() != NULL)
+			{	
+				// select all characters in the edit control
+				::SetFocus(DX.GetLastEditControl());
+				::SendMessage(DX.GetLastEditControl(), EM_SETSEL, 0, -1);
+			}
+			ok = TRUE; // DoDataExchage completed succesfully
+		}
+		catch(const CUserException& e)
+		{
+			// Validation has failed. Call the Fail to display the error.
+			DX.Fail( e.GetText() );
+		}
+
+		return ok;
+	}
+#endif // _WIN32_WCE
 
 	inline LRESULT CWnd::WndProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
@@ -2218,7 +1110,7 @@ namespace Win32xx
 		case WM_COMMAND:
 			{
 				// Reflect this message if it's from a control
-				CWnd* pWnd = GetApp().GetCWndFromMap((HWND)lParam);
+				CWnd* pWnd = GetCWndPtr((HWND)lParam);
 				if (pWnd != NULL)
 					lr = pWnd->OnCommand(wParam, lParam);
 
@@ -2230,7 +1122,13 @@ namespace Win32xx
 			}
 			break;  // Note: Some MDI commands require default processing
 		case WM_CREATE:
-			return OnCreate((LPCREATESTRUCT) lParam);
+			{
+				LPCREATESTRUCT pcs = (LPCREATESTRUCT) lParam;
+				if (pcs == NULL)
+					throw CWinException(_T("WM_CREATE failed"));
+
+				return OnCreate(*pcs);
+			}
 		case WM_DESTROY:
 			OnDestroy();
 			break;	// Note: Some controls require default processing.
@@ -2264,22 +1162,10 @@ namespace Win32xx
 
 		case WM_PAINT:
 			{
-				// Subclassed controls expect to do their own painting.
-				// CustomDraw or OwnerDraw are normally used to modify the drawing of controls.
-				if (m_PrevWindowProc) break;
-
-				if (::GetUpdateRect(*this, NULL, FALSE))
-				{
-					CPaintDC dc(*this);
-					OnDraw(dc);
-				}
-				else
-				// RedrawWindow can require repainting without an update rect
-				{
-					CClientDC dc(*this);
-					OnDraw(dc);
-				}
+				// OnPaint calls OnDraw when appropriate
+				OnPaint(uMsg, wParam, lParam);
 			}
+
 			return 0L;
 
 		case WM_ERASEBKGND:
@@ -2317,6 +1203,12 @@ namespace Win32xx
 		case UWM_UPDATECOMMAND:
 			OnMenuUpdate((UINT)wParam); // Perform menu updates
 			break;
+
+		case UWM_GETCWND:
+			{
+				assert(this == GetCWndPtr(m_hWnd));
+				return reinterpret_cast<LRESULT>(this);
+			}
 
 		} // switch (uMsg)
 
@@ -2495,7 +1387,7 @@ namespace Win32xx
 	}
 
 	inline int CWnd::GetDlgCtrlID() const
-	// Retrieves the control ID value for any child window
+	// Retrieves the control ID value for any child window.
 	{
 		assert(IsWindow());
 		return ::GetDlgCtrlID(*this);
@@ -2665,12 +1557,12 @@ namespace Win32xx
 		return ::IsChild(*this, hwndChild);
 	}
 
-	inline BOOL CWnd::IsDialogMessage(LPMSG lpMsg) const
+	inline BOOL CWnd::IsDialogMessage(MSG& Msg) const
 	// The IsDialogMessage function determines whether a message is intended for the specified dialog box and,
 	// if it is, processes the message.
 	{
 		assert(IsWindow());
-		return ::IsDialogMessage(*this, lpMsg);
+		return ::IsDialogMessage(*this, &Msg);
 	}
 
 	inline UINT CWnd::IsDlgButtonChecked(int nIDButton) const
@@ -2940,6 +1832,13 @@ namespace Win32xx
 		return iResult;
 	}
 
+	inline LONG_PTR CWnd::SetDlgCtrlID(int idCtrl) const
+	// Assigns an id to the window. Note that only child windows can have an ID assigned
+	{
+		assert(IsWindow());
+		return SetWindowLongPtr(GWLP_ID, idCtrl);
+	}
+
 	inline BOOL CWnd::SetDlgItemInt(int nIDDlgItem, UINT uValue, BOOL bSigned) const
 	// The SetDlgItemInt function sets the text of a control in a dialog box to the string representation of a specified integer value.
 	{
@@ -2984,7 +1883,7 @@ namespace Win32xx
 			typedef HRESULT (__stdcall *PFNSETWINDOWTHEME)(HWND hWnd, LPCWSTR pszSubAppName, LPCWSTR pszSubIdList);
 			PFNSETWINDOWTHEME pfn = (PFNSETWINDOWTHEME)GetProcAddress(hMod, "SetWindowTheme");
 
-			hr = (*pfn)(*this, pszSubAppName, pszSubIdList);
+			hr = pfn(*this, pszSubAppName, pszSubIdList);
 
 			::FreeLibrary(hMod);
 		}
@@ -3303,7 +2202,98 @@ namespace Win32xx
 
   #endif
 
-} // namespace Win32xx
+
+
+	////////////////////////////////////////
+	// Global Functions
+	//
+
+  #ifndef _WIN32_WCE		// for Win32/64 operating systems, not WinCE
+
+	inline UINT GetSizeofNonClientMetrics()
+	// This function correctly determines the sizeof NONCLIENTMETRICS
+	{
+
+  #if (WINVER >= 0x0600)
+		// Is OS version less than Vista, adjust size to correct value
+		if (GetWinVersion() < 2600)
+			return CCSIZEOF_STRUCT(NONCLIENTMETRICS, lfMessageFont);
+  #endif
+
+		return sizeof(NONCLIENTMETRICS);
+	}
+
+	inline BOOL IsLeftButtonDown()
+	// Reports the state of the left mouse button
+	{
+		SHORT state;
+		if (GetSystemMetrics(SM_SWAPBUTTON))
+			// Mouse buttons are swapped
+			state = GetAsyncKeyState(VK_RBUTTON);
+		else
+			// Mouse buttons are not swapped
+			state = GetAsyncKeyState(VK_LBUTTON);
+
+		// returns true if the left mouse button is down
+		return (state & 0x8000);
+	}
+
+
+  #endif // #ifndef _WIN32_WCE
+
+	inline void LoadCommonControls()
+	// Loads the common controls using InitCommonControlsEx or InitCommonControls.
+	// Returns TRUE of InitCommonControlsEx is used.
+	{
+		// Load the Common Controls DLL
+		HMODULE hComCtl = ::LoadLibrary(_T("COMCTL32.DLL"));
+		if (hComCtl == 0)
+			hComCtl = ::LoadLibrary(_T("COMMCTRL.DLL"));
+
+		if (hComCtl)
+		{
+			// Declare a typedef for the InItCommonControlsEx function
+			typedef BOOL WINAPI INIT_EX(INITCOMMONCONTROLSEX*);
+
+  #ifdef _WIN32_WCE
+			INIT_EX* pfnInitEx = (INIT_EX*)::GetProcAddress(hComCtl, _T("InitCommonControlsEx"));
+  #else
+			INIT_EX* pfnInitEx = (INIT_EX*)::GetProcAddress(hComCtl, "InitCommonControlsEx");
+  #endif
+
+			if (pfnInitEx)
+			{
+				// Load the full set of common controls
+				INITCOMMONCONTROLSEX InitStruct;
+				InitStruct.dwSize = sizeof(INITCOMMONCONTROLSEX);
+				InitStruct.dwICC = ICC_WIN95_CLASSES|ICC_BAR_CLASSES|ICC_COOL_CLASSES|ICC_DATE_CLASSES;
+
+
+  #if (!defined _WIN32_WCE && _WIN32_IE >= 0x0401)
+				if (GetComCtlVersion() > 470)
+				{
+					InitStruct.dwICC |= ICC_INTERNET_CLASSES|ICC_NATIVEFNTCTL_CLASS|ICC_PAGESCROLLER_CLASS|ICC_USEREX_CLASSES;
+				}
+  #endif
+  
+				// Call InitCommonControlsEx
+				if ( !(pfnInitEx(&InitStruct)) )
+				{
+					InitCommonControls();
+				}
+
+			}
+			else
+			{
+				// InitCommonControlsEx not supported. Use older InitCommonControls
+				InitCommonControls();
+			}
+
+			::FreeLibrary(hComCtl);
+		}
+	}
+}
+
 
 
 #endif // _WIN32XX_WINCORE_H_

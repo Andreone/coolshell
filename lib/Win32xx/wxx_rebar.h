@@ -1,12 +1,12 @@
-// Win32++   Version 8.0.1
-// Release Date: 28th July 2015
+// Win32++   Version 8.2
+// Release Date: 11th April 2016
 //
 //      David Nash
 //      email: dnash@bigpond.net.au
 //      url: https://sourceforge.net/projects/win32-framework
 //
 //
-// Copyright (c) 2005-2015  David Nash
+// Copyright (c) 2005-2016  David Nash
 //
 // Permission is hereby granted, free of charge, to
 // any person obtaining a copy of this software and
@@ -41,6 +41,7 @@
 #include "wxx_wincore.h"
 #include "wxx_gdi.h"
 #include "wxx_controls.h"
+#include "wxx_themes.h"
 
 
 namespace Win32xx
@@ -92,7 +93,7 @@ namespace Win32xx
 		void SetToolTips(HWND hToolTip) const;
 
 	protected:
-	//Overridables
+		//Overridables
 		virtual BOOL OnEraseBkgnd(CDC& dc);
 		virtual LRESULT OnLButtonDown(UINT uMsg, WPARAM wParam, LPARAM lParam);
 		virtual LRESULT OnLButtonUp(UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -100,7 +101,9 @@ namespace Win32xx
 		virtual LRESULT OnTBWinPosChanging(UINT uMsg, WPARAM wParam, LPARAM lParam);
 		virtual LRESULT OnToolBarResize(UINT uMsg, WPARAM wParam, LPARAM lParam);
 		virtual void PreCreate(CREATESTRUCT& cs);
-		virtual void PreRegisterClass(WNDCLASS &wc);
+		virtual void PreRegisterClass(WNDCLASS& wc);
+		
+		// Not intended to be overridden
 		virtual LRESULT WndProcDefault(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	private:
@@ -326,11 +329,11 @@ namespace Win32xx
 	{
 		// Permit the parent window to handle the drawing of the ReBar's background.
 		// Return TRUE to suppress default background drawing.
-		return (TRUE == GetParent().SendMessage(UWM_DRAWRBBKGND, (WPARAM)&dc, (LPARAM)this));
+		return (TRUE == SendMessage(::GetParent(m_hWnd), UWM_DRAWRBBKGND, (WPARAM)&dc, (LPARAM)this));
 	}
 
 
-	inline void CReBar::PreCreate(CREATESTRUCT &cs)
+	inline void CReBar::PreCreate(CREATESTRUCT& cs)
 	// Sets the CREATESTRUCT parameters prior to window creation
 	{
 		cs.style = WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS |
@@ -338,7 +341,7 @@ namespace Win32xx
 
 	}
 
-	inline void CReBar::PreRegisterClass(WNDCLASS &wc)
+	inline void CReBar::PreRegisterClass(WNDCLASS& wc)
 	{
 		// Set the Window Class
 		wc.lpszClassName =  REBARCLASSNAME;

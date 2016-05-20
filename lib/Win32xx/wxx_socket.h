@@ -1,12 +1,12 @@
-// Win32++   Version 8.0.1
-// Release Date: 28th July 2015
+// Win32++   Version 8.2
+// Release Date: 11th April 2016
 //
 //      David Nash
 //      email: dnash@bigpond.net.au
 //      url: https://sourceforge.net/projects/win32-framework
 //
 //
-// Copyright (c) 2005-2015  David Nash
+// Copyright (c) 2005-2016  David Nash
 //
 // Permission is hereby granted, free of charge, to
 // any person obtaining a copy of this software and
@@ -59,9 +59,8 @@
 // create a TCP client & server, and a UDP client and server.
 
 // To compile programs with CSocket, link with ws3_32.lib for Win32,
-// and ws2.lib for Windows CE. Windows 95 systems will need to install the
-// "Windows Sockets 2.0 for Windows 95". It's available from:
-// http://support.microsoft.com/kb/182108/EN-US/
+// and ws2.lib for Windows CE. This class uses Winsock version 2, and
+// supports Windows 98 and above.
 
 // For a TCP server, inherit a class from CSocket and override OnAccept, OnDisconnect
 // and OnRecieve. Create one instance of this class and use it as a listening socket.
@@ -104,17 +103,22 @@
 //    development environment fails to support IPv6.
 //
 
+
 #ifndef _WIN32XX_SOCKET_H_
 #define _WIN32XX_SOCKET_H_
 
-
+// include exception handling, TRACE etc.
 #include "wxx_wincore.h"
-#include <winsock2.h>
-#include <ws2tcpip.h>
 
-#ifndef _WIN32_WCE
-#include <process.h>
-#endif
+// Work around a bug in Visual Studio 6
+#ifdef _MSC_VER
+  #if _MSC_VER < 1500
+    // Skip loading wspiapi.h
+	#define _WSPIAPI_H_
+  #endif
+#endif  
+
+#include <ws2tcpip.h>
 
 #define THREAD_TIMEOUT 100
 
@@ -203,11 +207,11 @@ namespace Win32xx
 		WSADATA wsaData;
 
 		if (::WSAStartup(MAKEWORD(2,2), &wsaData) != 0)
-			throw CWinException(_T("WSAStartup failed"));
+			throw CNotSupportedException(_T("WSAStartup failed"));
 
 		m_hWS2_32 = LoadLibrary(_T("WS2_32.dll"));
 		if (m_hWS2_32 == 0)
-			throw CWinException(_T("Failed to load WS2_2.dll"));
+			throw CNotSupportedException(_T("Failed to load WS2_2.dll"));
 
 #ifdef _WIN32_WCE
 		m_pfnGetAddrInfo = reinterpret_cast<GETADDRINFO*>( GetProcAddress(m_hWS2_32, L"getaddrinfo") );
@@ -507,7 +511,7 @@ namespace Win32xx
 
 #ifdef GetAddrInfo
 
-		return (*m_pfnGetAddrInfo)(T2A(nodename), T2A(servname), hints, res);
+		return m_pfnGetAddrInfo(T2A(nodename), T2A(servname), hints, res);
 
 #else
 
@@ -576,7 +580,7 @@ namespace Win32xx
 
 #ifdef GetAddrInfo
 
-		(*m_pfnFreeAddrInfo)(ai);
+		m_pfnFreeAddrInfo(ai);
 
 #else
 

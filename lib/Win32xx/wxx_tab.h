@@ -1,12 +1,12 @@
-// Win32++   Version 8.0.1
-// Release Date: 28th July 2015
+// Win32++   Version 8.2
+// Release Date: 11th April 2016
 //
 //      David Nash
 //      email: dnash@bigpond.net.au
 //      url: https://sourceforge.net/projects/win32-framework
 //
 //
-// Copyright (c) 2005-2015  David Nash
+// Copyright (c) 2005-2016  David Nash
 //
 // Permission is hereby granted, free of charge, to
 // any person obtaining a copy of this software and
@@ -58,6 +58,12 @@ namespace Win32xx
 		int idTab;			// identifier for this tab (used by TabbedMDI)
 		CWnd* pView;		// pointer to the view window
 		TabPageInfo() : iImage(0), idTab(0), pView(0) {}	// constructor
+	};
+
+	struct TABNMHDR
+	{
+		NMHDR hdr;
+		UINT nPage;
 	};
 
 	class CTab : public CWnd
@@ -116,7 +122,7 @@ namespace Win32xx
 		virtual void SwapTabs(UINT nTab1, UINT nTab2);
 
 		// Attributes
-		std::vector<TabPageInfo>& GetAllTabs() const { return const_cast<std::vector <TabPageInfo>&>(m_vTabPageInfo); }
+		const std::vector<TabPageInfo>& GetAllTabs() const { return m_vTabPageInfo; }
 		CImageList GetODImageList() const	{ return const_cast<CImageList&>(m_imlODTab); }
 		CFont& GetTabFont() const		{ return const_cast<CFont&>(m_TabFont); }
 		BOOL GetShowButtons() const		{ return m_IsShowingButtons; }
@@ -177,10 +183,13 @@ namespace Win32xx
 		virtual LRESULT OnWindowPosChanging(UINT uMsg, WPARAM wParam, LPARAM lParam);
 		virtual void	NotifyChanged();
 		virtual void	NotifyDragged();
+		virtual BOOL	NotifyTabClosing(int nPage);
 		virtual void	Paint();
 		virtual void    PreCreate(CREATESTRUCT& cs);
-		virtual void	PreRegisterClass(WNDCLASS &wc);
+		virtual void	PreRegisterClass(WNDCLASS& wc);
 		virtual void    SetTabSize();
+		
+		// Not intended to be overridden
 		virtual LRESULT WndProcDefault(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	private:
@@ -237,6 +246,7 @@ namespace Win32xx
 		virtual void 	OnAttach();
 		virtual void    OnDestroy();
 		virtual LRESULT OnNotify(WPARAM wParam, LPARAM lParam);
+		virtual BOOL	OnTabClose(int nPage);
 		virtual LRESULT OnWindowPosChanged(UINT uMsg, WPARAM wParam, LPARAM lParam);
 		virtual LRESULT WndProcDefault(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
@@ -783,6 +793,19 @@ namespace Win32xx
 		GetParent().SendMessage(WM_NOTIFY, 0L, (LPARAM)&nmhdr);
 	}
 
+	inline BOOL CTab::NotifyTabClosing(int nPage)
+	{
+		int idCtrl = GetDlgCtrlID();
+		TABNMHDR TabNMHDR;
+		TabNMHDR.hdr.code = UWN_TABCLOSE;
+		TabNMHDR.hdr.hwndFrom = *this;
+		TabNMHDR.hdr.idFrom = idCtrl;
+		TabNMHDR.nPage = nPage;
+
+		// The default return value is zero
+		return (BOOL)GetParent().SendMessage(WM_NOTIFY, idCtrl, (LPARAM)&TabNMHDR);
+	}
+
 	inline void CTab::OnAttach()
 	{
 		// Create and assign the image list
@@ -864,12 +887,17 @@ namespace Win32xx
 		if (m_IsClosePressed && GetCloseRect().PtInRect(pt))
 		{
 			int nPage = GetCurSel();
-			RemoveTabPage(nPage);
-			if (nPage > 0)
-				SelectPage(nPage -1);
+			
+			// Send a notification to parent asking if its OK to close the tab.
+			if (!NotifyTabClosing(nPage))
+			{
+				RemoveTabPage(nPage);
+				if (nPage > 0)
+					SelectPage(nPage -1);
 
-			if (GetActiveView())
-				GetActiveView()->RedrawWindow();
+				if (GetActiveView())
+					GetActiveView()->RedrawWindow();
+			}
 		}
 
 		m_IsClosePressed = FALSE;
@@ -1106,7 +1134,7 @@ namespace Win32xx
 		cs.style = WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_VISIBLE;
 	}
 
-	inline void CTab::PreRegisterClass(WNDCLASS &wc)
+	inline void CTab::PreRegisterClass(WNDCLASS& wc)
 	{
 		wc.lpszClassName = WC_TABCONTROL;
 	}
@@ -1117,9 +1145,6 @@ namespace Win32xx
 		{
 			if (GetActiveView())
 			{
-				// Set the tab sizes
-				SetTabSize();
-
 				// Position the View over the tab control's display area
 				CRect rc = GetClientRect();
 				MapWindowPoints(GetParent(), rc);
@@ -1175,6 +1200,7 @@ namespace Win32xx
 
 			NotifyChanged();
 		}
+  		
 	}
 
 	inline void CTab::SelectPage(int nPage)
@@ -1857,29 +1883,55 @@ namespace Win32xx
 	inline LRESULT CTabbedMDI::OnNotify(WPARAM /*wParam*/, LPARAM lParam)
 	{
 		LPNMHDR pnmhdr = (LPNMHDR)lParam;
-		if (pnmhdr->code == UWN_TABCHANGED)
-			RecalcLayout();
+		assert(pnmhdr);
 
-		if (pnmhdr->code == UWN_TABDRAGGED)
+		switch(pnmhdr->code)
 		{
-			CPoint pt = GetCursorPos();
-			GetTab().ScreenToClient(pt);
 
-			TCHITTESTINFO info;
-			ZeroMemory(&info, sizeof(TCHITTESTINFO));
-			info.pt = pt;
-			int nTab = GetTab().HitTest(info);
-			if (nTab >= 0)
+		case UWN_TABCHANGED:
+			RecalcLayout();
+			break;
+
+		case UWN_TABDRAGGED:
 			{
-				if (nTab !=  GetActiveMDITab())
+				CPoint pt = GetCursorPos();
+				GetTab().ScreenToClient(pt);
+
+				TCHITTESTINFO info;
+				ZeroMemory(&info, sizeof(TCHITTESTINFO));
+				info.pt = pt;
+				int nTab = GetTab().HitTest(info);
+				if (nTab >= 0)
 				{
-					GetTab().SwapTabs(nTab, GetActiveMDITab());
-					SetActiveMDITab(nTab);
+					if (nTab !=  GetActiveMDITab())
+					{
+						GetTab().SwapTabs(nTab, GetActiveMDITab());
+						SetActiveMDITab(nTab);
+					}
 				}
+
+				break;
 			}
-		}
+
+		case UWN_TABCLOSE:
+			{	
+				TABNMHDR* pTabNMHDR = (TABNMHDR*)lParam;
+				return !OnTabClose(pTabNMHDR->nPage);
+			}
+
+		}	// switch(pnmhdr->code)
 
 		return 0L;
+	}
+
+	inline BOOL CTabbedMDI::OnTabClose(int nPage)
+	// Override this function to determine what happens when a tab is about to close.
+	// Return TRUE to allow the tab to close, or FALSE to prevent the tab closing.
+	{
+		UNREFERENCED_PARAMETER(nPage);
+		
+		// Allow the tab to be close
+		return TRUE;
 	}
 
 	inline LRESULT CTabbedMDI::OnWindowPosChanged(UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -1918,11 +1970,11 @@ namespace Win32xx
 			try
 			{
 				if (ERROR_SUCCESS != RegCreateKeyEx(HKEY_CURRENT_USER, KeyName, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey, NULL))
-					throw (CWinException(_T("RegCreateKeyEx Failed")));
+					throw (CUserException(_T("RegCreateKeyEx Failed")));
 
 				RegDeleteKey(hKey, _T("MDI Children"));
 				if (ERROR_SUCCESS != RegCreateKeyEx(hKey, _T("MDI Children"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKeyMDIChild, NULL))
-					throw (CWinException(_T("RegCreateKeyEx Failed")));
+					throw (CUserException(_T("RegCreateKeyEx Failed")));
 
 				for (int i = 0; i < GetMDIChildCount(); ++i)
 				{
@@ -1931,24 +1983,24 @@ namespace Win32xx
 
 					SubKeyName.Format(_T("ID%d"), i);
 					if (ERROR_SUCCESS != RegSetValueEx(hKeyMDIChild, SubKeyName, 0, REG_DWORD, (LPBYTE)&pdi.idTab, sizeof(int)))
-						throw (CWinException(_T("RegSetValueEx Failed")));
+						throw (CUserException(_T("RegSetValueEx Failed")));
 
 					SubKeyName.Format(_T("Text%d"), i);
 					CString TabText = GetTab().GetTabPageInfo(i).TabText;
 					if (ERROR_SUCCESS != RegSetValueEx(hKeyMDIChild, SubKeyName, 0, REG_SZ, (LPBYTE)TabText.c_str(), (1 + TabText.GetLength() )*sizeof(TCHAR)))
-						throw (CWinException(_T("RegSetValueEx Failed")));
+						throw (CUserException(_T("RegSetValueEx Failed")));
 				}
 
 				// Add Active Tab to the registry
 				CString SubKeyName = _T("Active MDI Tab");
 				int nTab = GetActiveMDITab();
 				if(ERROR_SUCCESS != RegSetValueEx(hKeyMDIChild, SubKeyName, 0, REG_DWORD, (LPBYTE)&nTab, sizeof(int)))
-					throw (CWinException(_T("RegSetValueEx failed")));
+					throw (CUserException(_T("RegSetValueEx failed")));
 
 				RegCloseKey(hKeyMDIChild);
 				RegCloseKey(hKey);
 			}
-			catch (const CWinException& e)
+			catch (const CUserException& e)
 			{
 				TRACE("*** Failed to save TabbedMDI settings in registry. ***\n");
 				TRACE(e.GetText()); TRACE("\n");
@@ -1993,6 +2045,7 @@ namespace Win32xx
 		switch(uMsg)
 		{
 		case WM_WINDOWPOSCHANGED:	return OnWindowPosChanged(uMsg, wParam, lParam);
+		case UWM_GETCTABBEDMDI:		return reinterpret_cast<LRESULT>(this);
 		}
 
 		return CWnd::WndProcDefault(uMsg, wParam, lParam);

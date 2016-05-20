@@ -1,12 +1,12 @@
-// Win32++   Version 8.0.1
-// Release Date: 28th July 2015
+// Win32++   Version 8.2
+// Release Date: 11th April 2016
 //
 //      David Nash
 //      email: dnash@bigpond.net.au
 //      url: https://sourceforge.net/projects/win32-framework
 //
 //
-// Copyright (c) 2005-2015  David Nash
+// Copyright (c) 2005-2016  David Nash
 //
 // Permission is hereby granted, free of charge, to
 // any person obtaining a copy of this software and
@@ -57,7 +57,7 @@ namespace Win32xx
 	public:
 		CTreeView() {}
 		virtual ~CTreeView() {}
-		virtual void PreRegisterClass(WNDCLASS &wc);
+		virtual void PreRegisterClass(WNDCLASS& wc);
 
 // Attributes
 		COLORREF GetBkColor() const;
@@ -134,7 +134,7 @@ namespace Win32xx
 namespace Win32xx
 {
 
-	inline void CTreeView::PreRegisterClass(WNDCLASS &wc)
+	inline void CTreeView::PreRegisterClass(WNDCLASS& wc)
 	{
 		// Set the Window Class
 		wc.lpszClassName =  WC_TREEVIEW;

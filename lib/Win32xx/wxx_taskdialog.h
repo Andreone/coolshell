@@ -1,12 +1,12 @@
-// Win32++   Version 8.0.1
-// Release Date: 28th July 2015
+// Win32++   Version 8.2
+// Release Date: 11th April 2016
 //
 //      David Nash
 //      email: dnash@bigpond.net.au
 //      url: https://sourceforge.net/projects/win32-framework
 //
 //
-// Copyright (c) 2005-2015  David Nash
+// Copyright (c) 2005-2016  David Nash
 //
 // Permission is hereby granted, free of charge, to
 // any person obtaining a copy of this software and
@@ -103,7 +103,6 @@ namespace Win32xx
 		void SetVerificationCheckbox(BOOL bChecked);
 		void SetVerificationCheckboxText(LPCTSTR pszVerificationText);
 		void SetWindowTitle(LPCTSTR pszWindowTitle);
-		static HRESULT CALLBACK StaticTaskDialogProc(HWND hWnd, UINT uNotification, WPARAM wParam, LPARAM lParam, LONG_PTR dwRefData);
 		void StoreText(std::vector<WCHAR>& vWChar, LPCTSTR pFromTChar);
 		void UpdateElementText(TASKDIALOG_ELEMENTS eElement, LPCTSTR pszNewText);
 		
@@ -127,6 +126,8 @@ namespace Win32xx
 	private:
 		CTaskDialog(const CTaskDialog&);				// Disable copy construction
 		CTaskDialog& operator = (const CTaskDialog&);	// Disable assignment operator
+
+		static HRESULT CALLBACK StaticTaskDialogProc(HWND hWnd, UINT uNotification, WPARAM wParam, LPARAM lParam, LONG_PTR dwRefData);
 
 		std::vector<TASKDIALOG_BUTTON> m_vButtons;
 		std::vector<TASKDIALOG_BUTTON> m_vRadioButtons;
@@ -233,6 +234,7 @@ namespace Win32xx
 	{
 		assert (GetHwnd() == NULL);
 
+		m_hWnd = 0;
 		m_tc.cbSize = sizeof(m_tc);
 		m_tc.pButtons = m_vButtons.empty()? NULL : &m_vButtons.front();
 		m_tc.cButtons = m_vButtons.size();
@@ -253,9 +255,24 @@ namespace Win32xx
 		TASKDIALOGINDIRECT* pTaskDialogIndirect = reinterpret_cast<TASKDIALOGINDIRECT*>(::GetProcAddress(hComCtl, "TaskDialogIndirect"));
 
 		// Call TaskDialogIndirect through our function pointer
-		LRESULT lr = (*pTaskDialogIndirect)(&m_tc, &m_SelectedButtonID, &m_SelectedRadioButtonID, &m_VerificationCheckboxState);
+		LRESULT lr = pTaskDialogIndirect(&m_tc, &m_SelectedButtonID, &m_SelectedRadioButtonID, &m_VerificationCheckboxState);
 
 		FreeLibrary(hComCtl);
+		pTLSData->pWnd = NULL;
+		m_hWnd = 0;
+
+		if (lr != S_OK)
+		{
+			// Throw an exception to indicate task dialog creation failure
+			// Note: GetLastError message is not used
+			if (lr == E_OUTOFMEMORY)
+				throw CWinException(_T("TaskDialogIndirect failed, out of memory"));
+			if (lr == E_INVALIDARG)
+				throw CWinException(_T("TaskDialogIndirect failed, invalid argument"));
+			else
+				throw CWinException(_T("TaskDialogIndirect failed"));
+		}
+
 		return lr;
 	}
 	
@@ -669,7 +686,7 @@ namespace Win32xx
 
 		assert( &GetApp() );
 
-		CTaskDialog* t = static_cast<CTaskDialog*>(GetApp().GetCWndFromMap(hWnd));
+		CTaskDialog* t = static_cast<CTaskDialog*>(GetCWndPtr(hWnd));
 		if (t == 0)
 		{
 			// The CTaskDialog pointer wasn't found in the map, so add it now
@@ -684,7 +701,7 @@ namespace Win32xx
 			pTLSData->pWnd = NULL;
 
 			// Store the CTaskDialog pointer in the HWND map
-			t->SetHwnd(hWnd);
+			t->m_hWnd = hWnd;
 			t->AddToMap();
 		}
 
@@ -730,7 +747,6 @@ namespace Win32xx
 			OnTDCreated();
 			break;
 		case TDN_DESTROYED:		
-			Cleanup();			// Prepare this CWnd to be reused. 
 			OnTDDestroyed();
 			break;
 		case TDN_DIALOG_CONSTRUCTED:

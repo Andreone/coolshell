@@ -1,12 +1,12 @@
-// Win32++   Version 8.0.1
-// Release Date: 28th July 2015
+// Win32++   Version 8.2
+// Release Date: 11th April 2016
 //
 //      David Nash
 //      email: dnash@bigpond.net.au
 //      url: https://sourceforge.net/projects/win32-framework
 //
 //
-// Copyright (c) 2005-2015  David Nash
+// Copyright (c) 2005-2016  David Nash
 //
 // Permission is hereby granted, free of charge, to
 // any person obtaining a copy of this software and
@@ -91,20 +91,16 @@
 //	}
 
 
-#include "wxx_wincore.h"
-
-#if !defined(_WIN32XX_MENU_H_) && !defined(_WIN32_WCE)
+#if !defined (_WIN32XX_MENU_H_) && !defined(_WIN32_WCE)
 #define _WIN32XX_MENU_H_
 
 
-#include "wxx_gdi.h"
+#include "wxx_appcore0.h"
+#include "wxx_cstring.h"
 
 
 namespace Win32xx
 {
-
-	// Forward declarations
-	class CBitmap;
 
 	class CMenu
 	{
@@ -147,20 +143,20 @@ namespace Win32xx
 		DWORD GetMenuContextHelpId() const;
 
 #if(WINVER >= 0x0500)	// Minimum OS required is Win2000
-		BOOL GetMenuInfo(LPMENUINFO lpcmi) const;
-		BOOL SetMenuInfo(LPCMENUINFO lpcmi);
+		BOOL GetMenuInfo(MENUINFO& mi) const;
+		BOOL SetMenuInfo(const MENUINFO& mi);
 #endif
 
 		UINT GetMenuItemCount() const;
 		UINT GetMenuItemID(int nPos) const;
-		BOOL GetMenuItemInfo(UINT uItem, LPMENUITEMINFO lpMenuItemInfo, BOOL fByPos = FALSE);
+		BOOL GetMenuItemInfo(UINT uItem, MENUITEMINFO& MenuItemInfo, BOOL fByPos = FALSE);
 		UINT GetMenuState(UINT uID, UINT uFlags) const;
 		int GetMenuString(UINT uIDItem, LPTSTR lpString, int nMaxCount, UINT uFlags) const;
 		int GetMenuString(UINT uIDItem, CString& rString, UINT uFlags) const;
 		CMenu GetSubMenu(int nPos);
 		BOOL InsertMenu(UINT uPosition, UINT uFlags, UINT_PTR uIDNewItem = 0, LPCTSTR lpszNewItem = NULL);
 		BOOL InsertMenu(UINT uPosition, UINT uFlags, UINT_PTR uIDNewItem, HBITMAP hBitmap);
-		BOOL InsertMenuItem(UINT uItem, LPMENUITEMINFO lpMenuItemInfo, BOOL fByPos = FALSE);
+		BOOL InsertMenuItem(UINT uItem, MENUITEMINFO& MenuItemInfo, BOOL fByPos = FALSE);
 		BOOL InsertPopupMenu(UINT uPosition, UINT uFlags, HMENU hPopupMenu, LPCTSTR lpszNewItem);
 		BOOL ModifyMenu(UINT uPosition, UINT uFlags, UINT_PTR uIDNewItem = 0, LPCTSTR lpszNewItem = NULL);
 		BOOL ModifyMenu(UINT uPosition, UINT uFlags, UINT_PTR uIDNewItem, HBITMAP hBitmap);
@@ -168,7 +164,7 @@ namespace Win32xx
 		BOOL SetDefaultItem(UINT uItem, BOOL fByPos = FALSE);
 		BOOL SetMenuContextHelpId(DWORD dwContextHelpId);
 		BOOL SetMenuItemBitmaps(UINT uPosition, UINT uFlags, HBITMAP hbmUnchecked, HBITMAP hbmChecked);
-		BOOL SetMenuItemInfo(UINT uItem, LPMENUITEMINFO lpMenuItemInfo, BOOL fByPos = FALSE);
+		BOOL SetMenuItemInfo(UINT uItem, MENUITEMINFO& MenuItemInfo, BOOL fByPos = FALSE);
 
 		//Operators
 		operator HMENU () const;
@@ -187,7 +183,21 @@ namespace Win32xx
 
 namespace Win32xx
 {
+	////////////////////////////////////////
+	// Global function
+	//
+	inline UINT GetSizeofMenuItemInfo()
+	{
+		// For Win95 and NT, cbSize needs to be 44
+		if (1400 == (GetWinVersion()) || (2400 == GetWinVersion()))
+			return CCSIZEOF_STRUCT(MENUITEMINFO, cch);
 
+		return sizeof(MENUITEMINFO);
+	}
+
+	////////////////////////////////////////
+	// Definitions of CMenu
+	//
 	inline CMenu::CMenu()
 	{
 		m_pData = new CMenu_Data;
@@ -246,9 +256,7 @@ namespace Win32xx
 		assert(m_pData);
 		assert(m_pData->hMenu);
 		
-		GetApp().m_csMapLock.Lock();
-		GetApp().m_mapCMenuData.insert(std::make_pair(m_pData->hMenu, m_pData));
-		GetApp().m_csMapLock.Release();
+		GetApp().AddCMenuData(m_pData->hMenu, m_pData);
 	}
 
 	inline void CMenu::Release()
@@ -336,7 +344,7 @@ namespace Win32xx
 			if (hMenu)
 			{
 				// Add the menu to this CMenu
-				CMenu_Data* pCMenuData = GetApp().GetCMenuDataFromMap(hMenu);
+				CMenu_Data* pCMenuData = GetApp().GetCMenuData(hMenu);
 				if (pCMenuData)
 				{
 					delete m_pData;
@@ -438,6 +446,7 @@ namespace Win32xx
 	// Enables, disables, or grays the specified menu item.
 	// The uEnable parameter must be a combination of either MF_BYCOMMAND or MF_BYPOSITION
 	// and MF_ENABLED, MF_DISABLED, or MF_GRAYED.
+	// MF_DISABLED and MF_GRAYED are different without XP themes, but the same with XP themes enabled.
 	{
 		assert(m_pData);
 		assert(IsMenu(m_pData->hMenu));
@@ -486,20 +495,20 @@ namespace Win32xx
 #if(WINVER >= 0x0500)
 // minimum OS required : Win2000
 
-	inline BOOL CMenu::GetMenuInfo(LPMENUINFO lpcmi) const
+	inline BOOL CMenu::GetMenuInfo(MENUINFO& mi) const
 	// Retrieves the menu information.
 	{
 		assert(m_pData);
 		assert(IsMenu(m_pData->hMenu));
-		return ::GetMenuInfo(m_pData->hMenu, lpcmi);
+		return ::GetMenuInfo(m_pData->hMenu, &mi);
 	}
 
-	inline BOOL CMenu::SetMenuInfo(LPCMENUINFO lpcmi)
+	inline BOOL CMenu::SetMenuInfo(const MENUINFO& mi)
 	// Sets the menu information from the specified MENUINFO structure.
 	{
 		assert(m_pData);
 		assert(IsMenu(m_pData->hMenu));
-		return ::SetMenuInfo(m_pData->hMenu, lpcmi);
+		return ::SetMenuInfo(m_pData->hMenu, &mi);
 	}
 
 #endif
@@ -520,14 +529,13 @@ namespace Win32xx
 		return ::GetMenuItemID(m_pData->hMenu, nPos);
 	}
 
-	inline BOOL CMenu::GetMenuItemInfo(UINT uItem, LPMENUITEMINFO lpMenuItemInfo, BOOL fByPos /*= FALSE*/)
+	inline BOOL CMenu::GetMenuItemInfo(UINT uItem, MENUITEMINFO& MenuItemInfo, BOOL fByPos /*= FALSE*/)
 	// retrieves information about the specified menu item.
 	{
 		assert(m_pData);
 		assert(IsMenu(m_pData->hMenu));
-		assert(lpMenuItemInfo);
-		lpMenuItemInfo->cbSize = GetSizeofMenuItemInfo();
-		return ::GetMenuItemInfo(m_pData->hMenu, uItem, fByPos, lpMenuItemInfo);
+		MenuItemInfo.cbSize = GetSizeofMenuItemInfo();
+		return ::GetMenuItemInfo(m_pData->hMenu, uItem, fByPos, &MenuItemInfo);
 	}
 
 	inline UINT CMenu::GetMenuState(UINT uID, UINT uFlags) const
@@ -586,14 +594,13 @@ namespace Win32xx
 		return ::InsertMenu(m_pData->hMenu, uPosition, uFlags, uIDNewItem, (LPCTSTR)hBitmap);
 	}
 
-	inline BOOL CMenu::InsertMenuItem(UINT uItem, LPMENUITEMINFO lpMenuItemInfo, BOOL fByPos /*= FALSE*/)
+	inline BOOL CMenu::InsertMenuItem(UINT uItem, MENUITEMINFO& MenuItemInfo, BOOL fByPos /*= FALSE*/)
 	// Inserts a new menu item at the specified position in the menu.
 	{
 		assert(m_pData);
 		assert(IsMenu(m_pData->hMenu));
-		assert(lpMenuItemInfo);
-		lpMenuItemInfo->cbSize = GetSizeofMenuItemInfo();
-		return ::InsertMenuItem(m_pData->hMenu, uItem, fByPos, lpMenuItemInfo);
+		MenuItemInfo.cbSize = GetSizeofMenuItemInfo();
+		return ::InsertMenuItem(m_pData->hMenu, uItem, fByPos, &MenuItemInfo);
 	}
 
 	inline BOOL CMenu::InsertPopupMenu(UINT uPosition, UINT uFlags, HMENU hPopupMenu, LPCTSTR lpszNewItem)
@@ -690,14 +697,13 @@ namespace Win32xx
 		return ::SetMenuItemBitmaps(m_pData->hMenu, uPosition, uFlags, hbmUnchecked, hbmChecked);
 	}
 
-	inline BOOL CMenu::SetMenuItemInfo(UINT uItem, LPMENUITEMINFO lpMenuItemInfo, BOOL fByPos /*= FALSE*/)
+	inline BOOL CMenu::SetMenuItemInfo(UINT uItem, MENUITEMINFO& MenuItemInfo, BOOL fByPos /*= FALSE*/)
 	// Changes information about a menu item.
 	{
 		assert(m_pData);
 		assert(IsMenu(m_pData->hMenu));
-		assert(lpMenuItemInfo);
-		lpMenuItemInfo->cbSize = GetSizeofMenuItemInfo();
-		return ::SetMenuItemInfo(m_pData->hMenu, uItem, fByPos, lpMenuItemInfo);
+		MenuItemInfo.cbSize = GetSizeofMenuItemInfo();
+		return ::SetMenuItemInfo(m_pData->hMenu, uItem, fByPos, &MenuItemInfo);
 	}
 		
 	inline BOOL CMenu::TrackPopupMenu(UINT uFlags, int x, int y, HWND hWnd, LPCRECT lpRect /*= 0*/)

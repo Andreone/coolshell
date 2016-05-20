@@ -1,12 +1,12 @@
-// Win32++   Version 8.0.1
-// Release Date: 28th July 2015
+// Win32++   Version 8.2
+// Release Date: 11th April 2016
 //
 //      David Nash
 //      email: dnash@bigpond.net.au
 //      url: https://sourceforge.net/projects/win32-framework
 //
 //
-// Copyright (c) 2005-2015  David Nash
+// Copyright (c) 2005-2016  David Nash
 //
 // Permission is hereby granted, free of charge, to
 // any person obtaining a copy of this software and
@@ -114,8 +114,8 @@ namespace Win32xx
 		CRect GetViewRect() const;
 		CCmdBar* GetMenuBar() const {return const_cast<CCmdBar*>(&m_MenuBar);}
 		virtual void OnActivate(UINT uMsg, WPARAM wParam, LPARAM lParam);
-		virtual int  OnCreate(LPCREATESTRUCT pcs);		
-		virtual void PreCreate(CREATESTRUCT &cs);
+		virtual int  OnCreate(CREATESTRUCT& cs);		
+		virtual void PreCreate(CREATESTRUCT& cs);
 		virtual void RecalcLayout();
 		virtual void SetButtons(const std::vector<UINT> ToolBarData);
 		virtual	LRESULT WndProcDefault(UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -146,7 +146,6 @@ namespace Win32xx
 		if (IsWindow())
 			::CommandBar_Destroy(*this);
 	}
-
 
 	inline BOOL CCmdBar::AddAdornments(DWORD dwFlags)
 	{
@@ -256,14 +255,14 @@ namespace Win32xx
 		return r;
 	}
 
-	inline int CWceFrame::OnCreate(LPCREATESTRUCT pcs)
+	inline int CWceFrame::OnCreate(CREATESTRUCT& cs)
 	{
 		// Create the Commandbar
 		GetMenuBar()->Create(*this);
 
 		// Set the keyboard accelerators
 		HACCEL hAccel = LoadAccelerators(GetApp().GetResourceHandle(), MAKEINTRESOURCE(IDW_MAIN));
-		GetApp().SetAccelerators(hAccel, this);
+		GetApp().SetAccelerators(hAccel, *this);
 
 		// Add the toolbar buttons
 		if (m_ToolBarData.size() > 0)
@@ -292,7 +291,7 @@ namespace Win32xx
 #endif
 	}
 
-	inline void CWceFrame::PreCreate(CREATESTRUCT &cs)
+	inline void CWceFrame::PreCreate(CREATESTRUCT& cs)
 	{
 		cs.style = WS_VISIBLE;
 		m_strAppName = _T("Win32++ Application");

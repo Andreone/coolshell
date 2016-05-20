@@ -1,12 +1,12 @@
-// Win32++   Version 8.0.1
-// Release Date: 28th July 2015
+// Win32++   Version 8.2
+// Release Date: 11th April 2016
 //
 //      David Nash
 //      email: dnash@bigpond.net.au
 //      url: https://sourceforge.net/projects/win32-framework
 //
 //
-// Copyright (c) 2005-2015  David Nash
+// Copyright (c) 2005-2016  David Nash
 //
 // Permission is hereby granted, free of charge, to
 // any person obtaining a copy of this software and
@@ -91,11 +91,7 @@ namespace Win32xx
 		virtual int  OnWizardBack();
 		virtual INT_PTR OnWizardFinish();
 		virtual int  OnWizardNext();
-		virtual	BOOL PreTranslateMessage(MSG* pMsg);
-
-		static UINT CALLBACK StaticPropSheetPageProc(HWND hwnd, UINT uMsg, LPPROPSHEETPAGE ppsp);
-		static INT_PTR CALLBACK StaticDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-
+		virtual	BOOL PreTranslateMessage(MSG& Msg);
 		void CancelToClose() const;
 		PROPSHEETPAGE GetPSP() const {return m_PSP;}
 		BOOL IsButtonEnabled(int iButton) const;
@@ -104,21 +100,23 @@ namespace Win32xx
 		void SetTitle(LPCTSTR szTitle);
 		void SetWizardButtons(DWORD dwFlags) const;
 
-	protected:
-		PROPSHEETPAGE m_PSP;
 
 	private:
 		CPropertyPage(const CPropertyPage&);				// Disable copy construction
 		CPropertyPage& operator = (const CPropertyPage&);	// Disable assignment operator
 
+		static UINT CALLBACK StaticPropSheetPageProc(HWND hwnd, UINT uMsg, LPPROPSHEETPAGE ppsp);
+		static INT_PTR CALLBACK StaticDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+		PROPSHEETPAGE m_PSP;
 		CString m_Title;
 	};
 
 	class CPropertySheet : public CWnd
 	{
 	public:
-		CPropertySheet(UINT nIDCaption, HWND hParent = NULL);
-		CPropertySheet(LPCTSTR pszCaption = NULL, HWND hParent = NULL);
+		CPropertySheet(UINT nIDCaption, HWND hParent = 0);
+		CPropertySheet(LPCTSTR pszCaption = NULL, HWND hParent = 0);
 		virtual ~CPropertySheet() {}
 
 		// Operations
@@ -146,7 +144,9 @@ namespace Win32xx
 		virtual void SetWizardMode(BOOL bWizard);
 
 	protected:
-		virtual BOOL PreTranslateMessage(MSG* pMsg);
+		virtual BOOL PreTranslateMessage(MSG& Msg);
+		
+		// Not intended to be overridden
 		virtual LRESULT WndProcDefault(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	private:
@@ -171,7 +171,7 @@ namespace Win32xx
 	//////////////////////////////////////////
 	// Definitions for the CPropertyPage class
 	//
-	inline CPropertyPage::CPropertyPage(UINT nIDTemplate, LPCTSTR szTitle /* = NULL*/)
+	inline CPropertyPage::CPropertyPage(UINT nIDTemplate, LPCTSTR szTitle /* = 0*/)
 	{
 		ZeroMemory(&m_PSP, sizeof(PROPSHEETPAGE));
 		SetTitle(szTitle);
@@ -236,7 +236,7 @@ namespace Win32xx
 		case WM_COMMAND:
 			{
 				// Reflect this message if it's from a control
-				CWnd* pWnd = GetApp().GetCWndFromMap((HWND)lParam);
+				CWnd* pWnd = GetCWndPtr((HWND)lParam);
 				if (pWnd != NULL)
 					lr = pWnd->OnCommand(wParam, lParam);
 
@@ -258,7 +258,7 @@ namespace Win32xx
 			{
 				// Do Notification reflection if it came from a CWnd object
 				HWND hwndFrom = ((LPNMHDR)lParam)->hwndFrom;
-				CWnd* pWndFrom = GetApp().GetCWndFromMap(hwndFrom);
+				CWnd* pWndFrom = GetCWndPtr(hwndFrom);
 
 				if (pWndFrom != NULL)
 					lr = pWndFrom->OnNotifyReflect(wParam, lParam);
@@ -331,8 +331,9 @@ namespace Win32xx
 
 	} // INT_PTR CALLBACK CPropertyPage::DialogProc(...)
 
-	inline BOOL CPropertyPage::IsButtonEnabled(int iButton) const
+	inline BOOL CPropertyPage::IsButtonEnabled(int iButton) const	
 	{
+		// returns TRUE if the button is enabled
 		assert(IsWindow());
 		return GetParent().GetDlgItem(iButton).IsWindowEnabled();
 	}
@@ -419,6 +420,7 @@ namespace Win32xx
 
 	inline LRESULT CPropertyPage::OnNotify(WPARAM wParam, LPARAM lParam)
 	{
+		// Handle the WM_NOTIFY message and call the appropriate functions
 		UNREFERENCED_PARAMETER(wParam);
 
 		LPPSHNOTIFY pNotify = (LPPSHNOTIFY)lParam;
@@ -481,7 +483,8 @@ namespace Win32xx
 
 		// Return Value:
 		// Return non-zero to prevent the wizard from finishing.
-		// Version 5.80. and later. Return a window handle to prevent the wizard from finishing. The wizard will set the focus to that window. The window must be owned by the wizard page.
+		// Version 5.80. and later. Return a window handle to prevent the wizard from finishing. 
+		// The wizard will set the focus to that window. The window must be owned by the wizard page.
 		// Return 0 to allow the wizard to finish.
 
 		return 0; // Allow wizard to finish
@@ -498,31 +501,32 @@ namespace Win32xx
 		return 0;
 	}
 
-	inline BOOL CPropertyPage::PreTranslateMessage(MSG* pMsg)
+	inline BOOL CPropertyPage::PreTranslateMessage(MSG& Msg)
 	{
 		// allow the tab control to translate keyboard input
-		if (pMsg->message == WM_KEYDOWN && GetAsyncKeyState(VK_CONTROL) < 0 &&
-			(pMsg->wParam == VK_TAB || pMsg->wParam == VK_PRIOR || pMsg->wParam == VK_NEXT))
+		if (Msg.message == WM_KEYDOWN && GetAsyncKeyState(VK_CONTROL) < 0 &&
+			(Msg.wParam == VK_TAB || Msg.wParam == VK_PRIOR || Msg.wParam == VK_NEXT))
 		{
-			if (GetParent().SendMessage(PSM_ISDIALOGMESSAGE, 0L, (LPARAM)pMsg))
+			if (GetParent().SendMessage(PSM_ISDIALOGMESSAGE, 0L, (LPARAM)&Msg))
 				return TRUE;
 		}
 
 		// allow the dialog to translate keyboard input
-		if ((pMsg->message >= WM_KEYFIRST) && (pMsg->message <= WM_KEYLAST))
+		if ((Msg.message >= WM_KEYFIRST) && (Msg.message <= WM_KEYLAST))
 		{
-			if (IsDialogMessage(pMsg))
+			if (IsDialogMessage(Msg))
 				return TRUE;
 		}
 
-		return CWnd::PreTranslateMessage(pMsg);
+		return CWnd::PreTranslateMessage(Msg);
 	}
 
 	inline LRESULT CPropertyPage::QuerySiblings(WPARAM wParam, LPARAM lParam) const
 	{
 		// Sent to a property sheet, which then forwards the message to each of its pages.
 		// Set wParam and lParam to values you want passed to the property pages.
-		// Returns the nonzero value from a page in the property sheet, or zero if no page returns a nonzero value.
+		// Returns the non-zero value from a page in the property sheet, or zero if no page
+		// returns a non-zero value.
 
 		assert(IsWindow());
 		return GetParent().SendMessage(PSM_QUERYSIBLINGS, wParam, lParam);
@@ -604,7 +608,7 @@ namespace Win32xx
 			pPage = static_cast<CPropertyPage*>(pTLSData->pWnd);
 
 			// Set the hWnd members and call DialogProc for this message
-			pPage->SetHwnd(hwndDlg);
+			pPage->m_hWnd = hwndDlg;
 			pPage->AddToMap();
 		}
 
@@ -615,7 +619,7 @@ namespace Win32xx
 	///////////////////////////////////////////
 	// Definitions for the CPropertySheet class
 	//
-	inline CPropertySheet::CPropertySheet(UINT nIDCaption, HWND hParent /* = NULL*/)
+	inline CPropertySheet::CPropertySheet(UINT nIDCaption, HWND hParent /* = 0*/)
 	{
 		ZeroMemory(&m_PSH, sizeof (PROPSHEETHEADER));
 		SetTitle(LoadString(nIDCaption));
@@ -635,7 +639,7 @@ namespace Win32xx
 		m_PSH.pfnCallback      = (PFNPROPSHEETCALLBACK)CPropertySheet::Callback;
 	}
 
-	inline CPropertySheet::CPropertySheet(LPCTSTR pszCaption /*= NULL*/, HWND hParent /* = NULL*/)
+	inline CPropertySheet::CPropertySheet(LPCTSTR pszCaption /*= NULL*/, HWND hParent /* = 0*/)
 	{
 		ZeroMemory(&m_PSH, sizeof (PROPSHEETHEADER));
 		SetTitle(pszCaption);
@@ -725,6 +729,7 @@ namespace Win32xx
 	// Creates a modeless Property Sheet
 	{
 		assert( &GetApp() );
+		assert(!IsWindow());		// Only one window per CWnd instance allowed
 
 		if (hParent)
 		{
@@ -739,18 +744,23 @@ namespace Win32xx
 		m_PSH.dwFlags &= ~PSH_WIZARD;
 		m_PSH.dwFlags |= PSH_MODELESS;
 		HWND hWnd = (HWND)CreatePropertySheet(&m_PSH);
+		if (hWnd == 0)
+			throw CWinException(_T("CreatePropertySheet failed"));
 
 		return hWnd;
 	}
 
 	inline INT_PTR CPropertySheet::CreatePropertySheet(LPCPROPSHEETHEADER ppsph)
+	// Display either a modal or modeless property sheet, depending on the PROPSHEETHEADER flags.
+	
 	{
 		assert( &GetApp() );
 
-		INT_PTR ipResult = 0;
-
 		// Only one window per CWnd instance allowed
-		assert( !IsWindow() );
+		assert(!IsWindow());
+
+		INT_PTR ipResult = 0;
+		m_hWnd = 0;
 
 		// Ensure this thread has the TLS index set
 		TLSData* pTLSData = GetApp().SetTlsData();
@@ -760,6 +770,11 @@ namespace Win32xx
 
 		// Create the property sheet
 		ipResult = PropertySheet(ppsph);
+
+		pTLSData->pWnd = NULL;
+
+		if (ipResult == -1)
+			throw CWinException(_T("PropertySheet failed"));
 
 		return ipResult;
 	}
@@ -778,20 +793,24 @@ namespace Win32xx
 	}
 
 	inline void CPropertySheet::Destroy()
+	// Note: To destroy a property sheet from within an application, post a WM_CLOSE
 	{
 		CWnd::Destroy();
 		m_vPages.clear();
 	}
 
 	inline int CPropertySheet::DoModal()
+	// Create a modal property sheet
 	{
 		assert( &GetApp() );
+		assert(!IsWindow());		// Only one window per CWnd instance allowed
 
 		BuildPageArray();
 		PROPSHEETPAGE* pPSPArray = &m_vPSP.front();
 		m_PSH.ppsp = pPSPArray;
 
 		// Create the Property Sheet
+		m_PSH.dwFlags &= ~PSH_MODELESS;
 		int nResult = (int)CreatePropertySheet(&m_PSH);
 
 		m_vPages.clear();
@@ -804,7 +823,7 @@ namespace Win32xx
 		assert(IsWindow());
 
 		CPropertyPage* pPage = NULL;
-		if (GetHwnd() != NULL)
+		if (GetHwnd() != 0)
 		{
 			HWND hPage = reinterpret_cast<HWND>(SendMessage(PSM_GETCURRENTPAGEHWND, 0L, 0L));
 			pPage = static_cast<CPropertyPage*>(GetCWndPtr(hPage));
@@ -855,30 +874,30 @@ namespace Win32xx
 		assert(IsWindow());
 
 		int nPage = GetPageIndex(pPage);
-		if (GetHwnd() != NULL)
+		if (GetHwnd() != 0)
 			SendMessage(*this, PSM_REMOVEPAGE, nPage, 0L);
 
 		m_vPages.erase(m_vPages.begin() + nPage, m_vPages.begin() + nPage+1);
 		m_PSH.nPages = (int)m_vPages.size();
 	}
 
-	inline BOOL CPropertySheet::PreTranslateMessage(MSG* pMsg)
+	inline BOOL CPropertySheet::PreTranslateMessage(MSG& Msg)
 	{
 		// allow sheet to translate Ctrl+Tab, Shift+Ctrl+Tab, Ctrl+PageUp, and Ctrl+PageDown
-		if (pMsg->message == WM_KEYDOWN && GetAsyncKeyState(VK_CONTROL) < 0 &&
-			(pMsg->wParam == VK_TAB || pMsg->wParam == VK_PRIOR || pMsg->wParam == VK_NEXT))
+		if (Msg.message == WM_KEYDOWN && GetAsyncKeyState(VK_CONTROL) < 0 &&
+			(Msg.wParam == VK_TAB || Msg.wParam == VK_PRIOR || Msg.wParam == VK_NEXT))
 		{
-			if (SendMessage(PSM_ISDIALOGMESSAGE, 0L, (LPARAM)pMsg))
+			if (SendMessage(PSM_ISDIALOGMESSAGE, 0L, (LPARAM)&Msg))
 				return TRUE;
 		}
 
 		// allow the dialog to translate keyboard input
-		if ((pMsg->message >= WM_KEYFIRST) && (pMsg->message <= WM_KEYLAST))
+		if ((Msg.message >= WM_KEYFIRST) && (Msg.message <= WM_KEYLAST))
 		{
-			return GetActivePage()->PreTranslateMessage(pMsg);
+			return GetActivePage()->PreTranslateMessage(Msg);
 		}
 
-		return CWnd::PreTranslateMessage(pMsg);
+		return CWnd::PreTranslateMessage(Msg);
 	}
 
 	inline BOOL CPropertySheet::SetActivePage(int nPage)
@@ -898,12 +917,14 @@ namespace Win32xx
 	}
 
 	inline void CPropertySheet::SetIcon(UINT idIcon)
+	// Sets the property sheet's icon
 	{
 		m_PSH.pszIcon = MAKEINTRESOURCE(idIcon);
 		m_PSH.dwFlags |= PSH_USEICONID;
 	}
 
 	inline void CPropertySheet::SetTitle(LPCTSTR szTitle)
+	// Sets the property sheet's title
 	{
 		if (szTitle)
 			m_Title = szTitle;
@@ -914,6 +935,8 @@ namespace Win32xx
 	}
 
 	inline void CPropertySheet::SetWizardMode(BOOL bWizard)
+	// A Wizard is a form of property sheet that displays the pages in sequence.
+	// This function enables or disables Wizard mode for the property sheet.
 	{
 		if (bWizard)
 			m_PSH.dwFlags |= PSH_WIZARD;

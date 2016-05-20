@@ -1,12 +1,12 @@
-// Win32++   Version 8.0.1
-// Release Date: 28th July 2015
+// Win32++   Version 8.2
+// Release Date: 11th April 2016
 //
 //      David Nash
 //      email: dnash@bigpond.net.au
 //      url: https://sourceforge.net/projects/win32-framework
 //
 //
-// Copyright (c) 2005-2015  David Nash
+// Copyright (c) 2005-2016  David Nash
 //
 // Permission is hereby granted, free of charge, to
 // any person obtaining a copy of this software and
@@ -35,10 +35,12 @@
 ////////////////////////////////////////////////////////
 
 
-#include "wxx_wincore.h"
-
 #ifndef _WIN32XX_FILE_H_
 #define _WIN32XX_FILE_H_
+
+
+#include "wxx_cstring.h"
+#include "wxx_exception.h"
 
 
 namespace Win32xx
@@ -58,7 +60,7 @@ namespace Win32xx
 			shareDenyNone =     0x0040,	// No sharing restrictions.
 			modeRead =          0x0100,	// Requests read access only.
 			modeWrite =         0x0200,	// Requests write access only.
-			modeReadWrite =     0x0300,	// Requests read and write access.	
+			modeReadWrite =     0x0300	// Requests read and write access.	
 		};
 	
 		CFile();
@@ -69,13 +71,16 @@ namespace Win32xx
 
 		virtual BOOL Close();
 		virtual BOOL Flush();
+		virtual CString GetFileDirectory() const;
+		virtual const CString& GetFileName() const;
+		virtual CString GetFileNameExt() const;
+		virtual CString GetFileNameWOExt() const;
+		virtual const CString& GetFilePath() const;
+		virtual CString GetFileTitle() const;
 		HANDLE GetHandle() const;
 		virtual ULONGLONG GetLength() const;
-		virtual const CString& GetFileName() const;
-		virtual const CString& GetFilePath() const;
-		virtual const CString& GetFileTitle() const;
 		virtual ULONGLONG GetPosition() const;
-		virtual BOOL Open(LPCTSTR pszFileName, UINT nOpenFlags);
+		virtual void Open(LPCTSTR pszFileName, UINT nOpenFlags);
 		virtual UINT Read(void* pBuf, UINT nCount);
 		static BOOL Remove(LPCTSTR pszFileName);
 		static BOOL Rename(LPCTSTR pszOldName, LPCTSTR pszNewName);
@@ -87,12 +92,6 @@ namespace Win32xx
 
 #ifndef _WIN32_WCE
 		virtual BOOL LockRange(ULONGLONG Pos, ULONGLONG Count);
-		virtual CString OpenFileDialog(LPCTSTR pszFilePathName = NULL,
-						DWORD dwFlags = OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT, LPCTSTR pszTitle = NULL,
-						LPCTSTR pszFilter = NULL, HWND hOwnerWnd = NULL);
-		virtual CString SaveFileDialog(LPCTSTR pszFilePathName = NULL,
-						DWORD dwFlags = OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT, LPCTSTR pszTitle = NULL,
-						LPCTSTR pszFilter = NULL, LPCTSTR pszDefExt = NULL, HWND hOwnerWnd = NULL);
 		virtual void SetFilePath(LPCTSTR pszNewName);
 		virtual BOOL UnlockRange(ULONGLONG Pos, ULONGLONG Count);
 #endif
@@ -102,7 +101,6 @@ namespace Win32xx
 		CFile& operator = (const CFile&);	// Disable assignment operator
 		CString m_FileName;
 		CString m_FilePath;
-		CString m_FileTitle;
 		HANDLE m_hFile;
 	};
 
@@ -136,8 +134,7 @@ namespace Win32xx
 	//	shareDenyNone	No sharing restrictions.
 	{
 		assert(pszFileName);
-		if (!Open(pszFileName, nOpenFlags))
-			throw CWinException(_T("Failed to open file"));
+		Open(pszFileName, nOpenFlags);	// throws CFileException on failure
 	}
 
 	inline CFile::~CFile()
@@ -173,7 +170,71 @@ namespace Win32xx
 		return m_hFile;
 	}
 
-	inline ULONGLONG CFile::GetLength( ) const
+	inline CString CFile::GetFileDirectory() const
+	// Returns the directory of the file associated with this object.
+	{
+		CString Directory;
+		
+		int sep = m_FilePath.ReverseFind(_T("\\"));
+		if (sep > 0)
+			Directory = m_FilePath.Left(sep);
+
+		return Directory;
+	}
+
+	inline const CString& CFile::GetFileName() const
+	// Returns the filename of the file associated with this object, not including the directory.
+	{
+		return const_cast<const CString&>(m_FileName);
+	}
+
+	inline CString CFile::GetFileNameExt() const
+	// Returns the extension part of the filename of the file associated with this object.
+	{
+		CString Extension;
+
+		int dot = m_FileName.ReverseFind(_T("."));
+		if (dot > 1)
+			Extension = m_FileName.Mid(dot+1, lstrlen(m_FileName));
+
+		return Extension;
+	}
+
+	inline CString CFile::GetFileNameWOExt() const
+	// Returns the filename of the file associated with this object, not including the directory, without its extension.
+	{
+		CString FileNameWOExt = m_FileName;
+
+		int dot = m_FileName.ReverseFind(_T("."));
+		if (dot > 0)
+			FileNameWOExt = m_FileName.Left(dot);
+		
+		return FileNameWOExt;
+	}
+
+	inline const CString& CFile::GetFilePath() const
+	// Returns the full filename including the directory of the file associated with this object.
+	{
+		return const_cast<const CString&>(m_FilePath);
+	}
+
+	inline CString CFile::GetFileTitle() const
+	// Returns the string that the system would use to display the file name to
+	// the user. The string might or might not contain the filename's extension
+	// depending on user settings.
+	{
+		CString FileTitle;
+		int nBuffSize = m_FilePath.GetLength();
+		if (nBuffSize > 0)
+		{
+			::GetFileTitle(m_FilePath, FileTitle.GetBuffer(nBuffSize), (WORD)nBuffSize);
+			FileTitle.ReleaseBuffer();
+		}
+
+		return FileTitle;
+	}
+
+	inline ULONGLONG CFile::GetLength() const
 	// Returns the length of the file in bytes.
 	{
 		assert(m_hFile);
@@ -187,24 +248,6 @@ namespace Win32xx
 
 		ULONGLONG Result = ((ULONGLONG)HighPosEnd << 32) + LowPosEnd;
 		return Result;
-	}
-
-	inline const CString& CFile::GetFileName() const
-	// Returns the filename of the file associated with this object.
-	{
-		return const_cast<const CString&>(m_FileName);
-	}
-
-	inline const CString& CFile::GetFilePath() const
-	// Returns the full filename including the directory of the file associated with this object.
-	{
-		return const_cast<const CString&>(m_FilePath);
-	}
-
-	inline const CString& CFile::GetFileTitle() const
-	// Returns the filename of the file associated with this object, excluding the path and the file extension
-	{
-		return const_cast<const CString&>(m_FileTitle);
 	}
 
 	inline ULONGLONG CFile::GetPosition() const
@@ -233,7 +276,7 @@ namespace Win32xx
 	}
 #endif
 
-	inline BOOL CFile::Open(LPCTSTR pszFileName, UINT nOpenFlags)
+	inline void CFile::Open(LPCTSTR pszFileName, UINT nOpenFlags)
 	// Prepares a file to be written to or read from.
 	// Possible nOpenFlag values: CREATE_NEW, CREATE_ALWAYS, OPEN_EXISTING, OPEN_ALWAYS, TRUNCATE_EXISTING
 	// Default value: OPEN_EXISTING | modeReadWrite
@@ -252,12 +295,16 @@ namespace Win32xx
 		if (m_hFile != 0) Close();
 
 		DWORD dwAccess = 0;
-		switch (nOpenFlags & 0xF)
+		switch (nOpenFlags & 0xF00)
 		{
-		case modeRead:			dwAccess = GENERIC_READ;	break;
-		case modeWrite:			dwAccess = GENERIC_WRITE;	break;
-		case modeReadWrite:		dwAccess = GENERIC_READ | GENERIC_WRITE; break;
-		default:				dwAccess = GENERIC_READ | GENERIC_WRITE; break;
+		case modeRead:
+			dwAccess = GENERIC_READ;	break;
+		case modeWrite:
+			dwAccess = GENERIC_WRITE;	break;
+		case modeReadWrite:
+			dwAccess = GENERIC_READ | GENERIC_WRITE; break;
+		default:
+			dwAccess = GENERIC_READ | GENERIC_WRITE; break;
 		}
 
 		DWORD dwShare = 0;
@@ -279,6 +326,7 @@ namespace Win32xx
 		if (INVALID_HANDLE_VALUE == m_hFile)
 		{
 			m_hFile = 0;
+			throw CFileException(pszFileName, _T("Failed to open file"));
 		}
 
 #ifndef _WIN32_WCE
@@ -288,43 +336,7 @@ namespace Win32xx
 		}
 #endif
 
-		return (m_hFile != 0);
 	}
-
-#ifndef _WIN32_WCE
-	inline CString CFile::OpenFileDialog(LPCTSTR pszFilePathName, DWORD dwFlags, LPCTSTR pszTitle, LPCTSTR pszFilter, HWND hOwnerWnd)
-	// Displays the file open dialog.
-	// Returns a CString containing either the selected file name or an empty CString.
-	{
-		CString str;
-		if (pszFilePathName)
-			str = pszFilePathName;
-
-		int MaxPath = 260; // Should be a const int but VS6 can't handle it.
-
-		OPENFILENAME ofn;
-		ZeroMemory(&ofn, sizeof(OPENFILENAME));
-		ofn.lStructSize = sizeof(OPENFILENAME);
-
-#if defined OPENFILENAME_SIZE_VERSION_400
-		if (GetWinVersion() < 2500)
-			ofn.lStructSize = OPENFILENAME_SIZE_VERSION_400;
-#endif
-
-		ofn.hwndOwner = hOwnerWnd;
-		ofn.hInstance = GetApp().GetInstanceHandle();
-		ofn.lpstrFilter = pszFilter;
-		ofn.lpstrTitle = pszTitle? pszTitle : _T("Open File");
-		ofn.Flags = dwFlags;
-		ofn.nMaxFile = MaxPath;
-
-		ofn.lpstrFile = (LPTSTR)str.GetBuffer(MaxPath);
-		::GetOpenFileName(&ofn);
-		str.ReleaseBuffer();
-
-		return str;
-	}
-#endif
 
 	inline UINT CFile::Read(void* pBuf, UINT nCount)
 	// Reads from the file, storing the contents in the specified buffer.
@@ -337,7 +349,7 @@ namespace Win32xx
 		DWORD dwRead = 0;
 
 		if (!::ReadFile(m_hFile, pBuf, nCount, &dwRead, NULL))
-			throw CWinException(_T("Failed to read from file"));
+			throw CFileException(GetFilePath(), _T("Failed to read from file"));
 
 		return dwRead;
 	}
@@ -353,42 +365,6 @@ namespace Win32xx
 	{
 		return ::DeleteFile(pszFileName);
 	}
-
-#ifndef _WIN32_WCE
-	inline CString CFile::SaveFileDialog(LPCTSTR pszFilePathName, DWORD dwFlags, LPCTSTR pszTitle, LPCTSTR pszFilter, LPCTSTR pszDefExt, HWND hOwnerWnd)
-	// Displays the SaveFileDialog.
-	// Returns a CString containing either the selected file name or an empty CString
-	{
-		CString str;
-		if (pszFilePathName)
-			str = pszFilePathName;
-
-		int MaxPath = 260; // Should be a const int but VS6 can't handle it.
-
-		OPENFILENAME ofn;
-		ZeroMemory(&ofn, sizeof(OPENFILENAME));
-		ofn.lStructSize = sizeof(OPENFILENAME);
-
-#if defined OPENFILENAME_SIZE_VERSION_400
-		if (GetWinVersion() < 2500)
-			ofn.lStructSize = OPENFILENAME_SIZE_VERSION_400;
-#endif
-
-		ofn.hwndOwner = hOwnerWnd;
-		ofn.hInstance = GetApp().GetInstanceHandle();
-		ofn.lpstrFilter = pszFilter;
-		ofn.lpstrFileTitle = (LPTSTR)pszFilePathName;
-		ofn.lpstrDefExt = pszDefExt;
-		ofn.lpstrTitle = pszTitle? pszTitle : _T("Save File");
-		ofn.Flags = dwFlags;
-		ofn.nMaxFile = MaxPath;
-		ofn.lpstrFile = (LPTSTR)str.GetBuffer(MaxPath);
-		::GetSaveFileName(&ofn);
-		str.ReleaseBuffer();
-
-		return str;
-	}
-#endif
 
 	inline ULONGLONG CFile::Seek(LONGLONG lOff, UINT nFrom)
 	// Positions the current file pointer.
@@ -431,9 +407,6 @@ namespace Win32xx
 			::GetFullPathName(pszFileName, nBuffSize, m_FilePath.GetBuffer(nBuffSize), &pFileName);
 			m_FilePath.ReleaseBuffer();
 			m_FileName = pFileName;
-			int nPos = m_FileName.ReverseFind(_T("."));
-			if (nPos >= 0)
-				m_FileTitle = m_FileName.Left(nPos);
 		}
 	}
 #endif
@@ -472,10 +445,10 @@ namespace Win32xx
 		assert(pBuf);
 		DWORD dwWritten = 0;
 		if (!::WriteFile(m_hFile, pBuf, nCount, &dwWritten, NULL))
-			throw CWinException(_T("Failed to write to file"));
+			throw CFileException(GetFilePath(), _T("Failed to write to file"));
 		
 		if (dwWritten != nCount)
-			throw CWinException(_T("Failed to write to file"));
+			throw CFileException(GetFilePath(), _T("Failed to write to file"));
 	}
 
 

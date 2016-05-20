@@ -1,12 +1,12 @@
-// Win32++   Version 8.0.1
-// Release Date: 28th July 2015
+// Win32++   Version 8.2
+// Release Date: 11th April 2016
 //
 //      David Nash
 //      email: dnash@bigpond.net.au
 //      url: https://sourceforge.net/projects/win32-framework
 //
 //
-// Copyright (c) 2005-2015  David Nash
+// Copyright (c) 2005-2016  David Nash
 //
 // Permission is hereby granted, free of charge, to
 // any person obtaining a copy of this software and
@@ -69,7 +69,7 @@ namespace Win32xx
 		virtual LRESULT OnSysCommand(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	protected:
-	//Overridables
+		//Overridables
 		virtual void OnAttach();
 		virtual LRESULT OnDrawItem(UINT uMsg, WPARAM wParam, LPARAM lParam);
 		virtual LRESULT OnExitMenuLoop(UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -89,8 +89,10 @@ namespace Win32xx
 		virtual LRESULT OnTBNHotItemChange(LPNMTBHOTITEM pNMHI);
 		virtual LRESULT OnWindowPosChanged(UINT uMsg, WPARAM wParam, LPARAM lParam);
 		virtual LRESULT OnWindowPosChanging(UINT uMsg, WPARAM wParam, LPARAM lParam);
-		virtual void	PreCreate(CREATESTRUCT &cs);
-		virtual void	PreRegisterClass(WNDCLASS &wc);
+		virtual void	PreCreate(CREATESTRUCT& cs);
+		virtual void	PreRegisterClass(WNDCLASS& wc);
+		
+		// Not intended to be overridden
 		virtual LRESULT WndProcDefault(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	private:
@@ -355,9 +357,9 @@ namespace Win32xx
 
 	inline void CMenuBar::GrabFocus()
 	{
-		if (GetFocus() != *this)
-			m_hPrevFocus = SetFocus();
-		SetCapture();
+		if (::GetFocus() != *this)
+			m_hPrevFocus = ::SetFocus(m_hWnd);
+		::SetCapture(m_hWnd);
 		::SetCursor(::LoadCursor(NULL, IDC_ARROW));
 	}
 
@@ -391,7 +393,7 @@ namespace Win32xx
 		SendMessage(TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0L);
 
 		TLSData* pTLSData = GetApp().GetTlsData();
-		m_hFrame = pTLSData->pMainWnd->GetHwnd();
+		m_hFrame = pTLSData->hMainWnd;
 	}
 
 	inline LRESULT CMenuBar::OnDrawItem(UINT, WPARAM wParam, LPARAM lParam)
@@ -931,7 +933,7 @@ namespace Win32xx
 		// This is used to bring up a new popup menu when required
 
 		CPoint pt = GetCursorPos();
-		if (*this == WindowFromPoint(pt))	// MenuBar window must be on top
+		if (*this == ::WindowFromPoint(pt))	// MenuBar window must be on top
 		{
 			DWORD flag = pNMHI->dwFlags;
 			if ((flag & HICF_MOUSE) && !(flag & HICF_LEAVING))
@@ -983,12 +985,12 @@ namespace Win32xx
 		return FinalWindowProc(uMsg, wParam, lParam);
 	}
 
-	inline void CMenuBar::PreCreate(CREATESTRUCT &cs)
+	inline void CMenuBar::PreCreate(CREATESTRUCT& cs)
 	{
 		cs.style = WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | TBSTYLE_TOOLTIPS | TBSTYLE_LIST | TBSTYLE_FLAT | CCS_NODIVIDER | CCS_NORESIZE;
 	}
 
-	inline void CMenuBar::PreRegisterClass(WNDCLASS &wc)
+	inline void CMenuBar::PreRegisterClass(WNDCLASS& wc)
 	{
 		// Set the Window Class
 		wc.lpszClassName =  TOOLBARCLASSNAME;

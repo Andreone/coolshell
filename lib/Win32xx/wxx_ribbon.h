@@ -1,12 +1,12 @@
-// Win32++   Version 8.0.1
-// Release Date: 28th July 2015
+// Win32++   Version 8.2
+// Release Date: 11th April 2016
 //
 //      David Nash
 //      email: dnash@bigpond.net.au
 //      url: https://sourceforge.net/projects/win32-framework
 //
 //
-// Copyright (c) 2005-2015  David Nash
+// Copyright (c) 2005-2016  David Nash
 //
 // Permission is hereby granted, free of charge, to
 // any person obtaining a copy of this software and
@@ -50,6 +50,8 @@
 
 #include <UIRibbon.h>					// Contained within the Windows 7 SDK	
 #include <UIRibbonPropertyHelpers.h>
+
+#include "wxx_frame.h"
 
 namespace Win32xx
 {
@@ -123,7 +125,7 @@ namespace Win32xx
 		CRibbonFrame() {}
 		virtual ~CRibbonFrame() {}
 		virtual CRect GetViewRect() const;
-		virtual int  OnCreate(LPCREATESTRUCT pcs);
+		virtual int  OnCreate(CREATESTRUCT& cs);
 		virtual void OnDestroy();
 		virtual STDMETHODIMP OnViewChanged(UINT32 viewId, UI_VIEWTYPE typeId, IUnknown* pView, UI_VIEWVERB verb, INT32 uReasonCode);
 		virtual HRESULT PopulateRibbonRecentItems(__deref_out PROPVARIANT* pvarValue);
@@ -328,7 +330,7 @@ namespace Win32xx
 		return rcClient;
 	}
 
-	inline int CRibbonFrame::OnCreate(LPCREATESTRUCT pcs)
+	inline int CRibbonFrame::OnCreate(CREATESTRUCT& cs)
 	{
 		// OnCreate is called automatically during window creation when a
 		// WM_CREATE message received.
@@ -336,7 +338,7 @@ namespace Win32xx
 		// Tasks such as setting the icon, creating child windows, or anything
 		// associated with creating windows are normally performed here.
 
-		UNREFERENCED_PARAMETER(pcs);
+		UNREFERENCED_PARAMETER(cs);
 
 		if (GetWinVersion() >= 2601)	// WinVersion >= Windows 7
 		{	
@@ -345,14 +347,14 @@ namespace Win32xx
 				SetUseReBar(FALSE);			// Don't use a ReBar
 				SetUseToolBar(FALSE);		// Don't use a ToolBar
 
-				CFrame::OnCreate(pcs);
+				CFrame::OnCreate(cs);
 				SetMenu(NULL);
 				ShowStatusBar(TRUE);
 			}		
 		}
 		else 
 		{
-			CFrame::OnCreate(pcs);
+			CFrame::OnCreate(cs);
 		}
 
 		return 0;
