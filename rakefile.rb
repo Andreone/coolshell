@@ -9,7 +9,7 @@ $staging_area_dir = 'staging_area'
 
 $build_configuration = ENV['config'] || 'Release'
 $build_platform = ENV['platform'] || 'Win32'
-$build_toolset = ENV['toolset'] || 'v120'
+$build_toolset = ENV['toolset'] || 'v140'
 $project_resource_file = File.join('src', $project_name, $project_name + '.rc')
 
 def GetBuildOutputDir()
@@ -105,7 +105,7 @@ task :doc do
   `doxygen doxyfile`
 end
 
-desc 'Run a CLOC analysis'
+desc 'Generate a CLOC report'
 task :cloc do
   analysed_folders = 'src'
   xml_result = 'cloc.xml'
@@ -115,7 +115,7 @@ task :cloc do
   FileUtils.rm(xml_result) if File.exist?(xml_result)
 end
 
-desc 'Run a CppCheck analysis'
+desc 'Generate a CppCheck report'
 task :cppcheck do
   analysed_folders = 'src'
   xml_result = 'cppcheck_results.xml'
